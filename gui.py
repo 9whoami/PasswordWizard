@@ -214,8 +214,9 @@ class Main(QtGui.QMainWindow):
                 self.show_msg("Failed to encrypt password")
                 return
             query = "update %s " \
-                    "set login = '%s', passwd = '%s', forgot = '%s' " \
+                    "set service = '%s', login = '%s', passwd = '%s', forgot = '%s' " \
                     "where id = %d;" % (box_layout.tbl,
+                                        box_layout.service.text(),
                                         box_layout.login.text(),
                                         passwd,
                                         box_layout.forgot.text(),

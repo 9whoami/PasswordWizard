@@ -8,5 +8,5 @@ if __name__ == "__main__":
         name="PasswordWizard",
         version="1.0.0",
         description="It stores and encrypts passwords",
-        executables=[Executable("main.py", base="Win32GUI")]
+        executables=[Executable("main.py", base="Win32GUI", icon="main.ico")]
     )

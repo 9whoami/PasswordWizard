@@ -12,7 +12,7 @@ from key_gen import rsa_decode, rsa_encode, encode_md5, rsa_gen_key
 
 
 class Main(QtGui.QMainWindow):
-    def __init__(self, db, keys, login, tray_icon=None, parent=None):
+    def __init__(self, db, keys, login, parent=None):
         super(Main, self).__init__(parent)
         self.setWindowIcon(QtGui.QIcon("ico.png"))
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
@@ -21,7 +21,8 @@ class Main(QtGui.QMainWindow):
         self.db = db
         self.keys = keys
         self.passwd_length = 6
-        self.tray_icon = tray_icon
+        self.tray_icon = QtGui.QSystemTrayIcon(QtGui.QIcon("ico.png"))
+        self.tray_icon.activated.connect(self.on_tray_event)
         self.tray_icon.show()
         tables = ("emails", "accounts", "other_accounts",)
 
@@ -92,6 +93,13 @@ class Main(QtGui.QMainWindow):
 
         self.show_accounts(tables[0])
         self.show_msg("Welcome %s" % login)
+
+    def on_tray_event(self, reason):
+        if reason == 2:
+            if self.isHidden():
+                self.show()
+            else:
+                self.hide()
 
     def add_account(self):
         if "accounts" == self.tbl and not self.db.get_email_id():
@@ -346,10 +354,8 @@ class BoxLayout(QtGui.QWidget):
 def start(db, keys, login):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
-    tray = QtGui.QSystemTrayIcon(
-        QtGui.QIcon("ico.png")
-    )
-    myWidget = Main(db, keys, login, tray)
+
+    myWidget = Main(db, keys, login)
 
     myWidget.create_menu_actions(
         dict(Show=myWidget.show,
@@ -357,8 +363,8 @@ def start(db, keys, login):
     )
     myWidget.show()
     app.exec_()
-    print("Goodbye")
-    del (db)
+    del myWidget
+    del db
     sys.exit()
 
 

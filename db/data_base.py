@@ -19,6 +19,17 @@ class DataBase(MySQLConnection):
         except Error:
             raise RuntimeError()
 
+    def sign_in(self, password):
+        rows = self.query_fetch("select * "
+                                "from users "
+                                "where passwd = '%s'"
+                                % password)
+        if rows:
+            self.set_user_id(rows[0][0])
+            return rows[0][1]
+        else:
+            return False
+
     def set_user_id(self, id):
         self.__userid = id
 
@@ -35,13 +46,15 @@ class DataBase(MySQLConnection):
                                     "from emails " \
                                     "where id = %d" % id)
             self.__email_login = ' '.join(rows[0])
+            self.all = False
         else:
             self.__email_login = self.__emailid = None
+            self.all = True
 
     def check_user(self, login):
         try:
-            self.cursor.execute("select username "
-                                "from users")
+            self.cursor.execute("SELECT username "
+                                "FROM users")
             rows = self.cursor.fetchall()
             for row in rows:
                 if login in row:
@@ -102,6 +115,18 @@ class DataBase(MySQLConnection):
                 "other_accounts(service,login,passwd,forgot,id_user) " \
                 "values (%s,%s,%s,%s,%s)"
         return self.query_insert(query, data)
+
+    def update_account(self, tabel, service, login, passwd, forgot, id):
+        query = "update %s " \
+                "set service = '%s', login = '%s', passwd = '%s', forgot = '%s' " \
+                "where id = %d;" % (tabel, service, login, passwd, forgot, id)
+        try:
+            self.cursor.execute(query)
+            self.commit()
+            return True, None
+        except Error as e:
+            print(e)
+            return False, e
 
     def del_account(self, table_name, id):
         query = "delete " \

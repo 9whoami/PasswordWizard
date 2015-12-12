@@ -25,7 +25,7 @@ def rsa_gen_key(publicfile='public.key', privatefile='private.key'):
     генерируем ключи доступа
     :param publicfile: имя будущего файла
     :param privatefile: имя будущего файла
-    :return: в случае успеха возвращаем значение публичного ключа иначе false
+    :return: в случае успеха возвращаем публичный и приватный ключи
     """
     (pubkey, privkey) = newkeys(2048)
     pckey = pubkey.save_pkcs1()
@@ -38,12 +38,12 @@ def rsa_gen_key(publicfile='public.key', privatefile='private.key'):
             f.write(ptkey)
     except IOError as e:
         print("Error: %s" % e)
-        return False
+        return None, None
     else:
-        return pckey
+        return pubkey, privkey
 
 
-def rsa_load_key(publicfile=None, privatefile=None, dir=None):
+def rsa_load_key(dir):
     """
     Загружаем ключи из файлов
     :param publicfile: файл публичного ключа
@@ -51,16 +51,19 @@ def rsa_load_key(publicfile=None, privatefile=None, dir=None):
     :param dir: папка с ключами
     :return: возвращаем публичный и приватный ключи
     """
-    if dir:
-        if dir[-1] != '\\':
-            dir += '\\'
-        with open(dir+'public.key', 'rb') as f:
+    try:
+        # TODO check files public.key and private.key
+        # TODO using multiplatform
+        with open(dir + 'public.key', 'rb') as f:
             publicfile = f.read()
-        with open(dir+'private.key', 'rb') as f:
+        with open(dir + 'private.key', 'rb') as f:
             privatefile = f.read()
-    pubkey = PublicKey.load_pkcs1(keyfile=publicfile)
-    privkey = PrivateKey.load_pkcs1(keyfile=privatefile)
-    return pubkey, privkey
+        pubkey = PublicKey.load_pkcs1(keyfile=publicfile)
+        privkey = PrivateKey.load_pkcs1(keyfile=privatefile)
+        return pubkey, privkey
+    except IOError as e:
+        print("Error: %s" % e)
+        return None, None
 
 
 def rsa_encode(data, key):

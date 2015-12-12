@@ -63,18 +63,43 @@ class DataBase(MySQLConnection):
         except Error:
             return False
 
+    def get_all_accounts(self):
+        # TODO the horror remake in the future!!!
+        # список аккаунтов
+        buf = self.query_fetch(
+            "select id,service,login,passwd,forgot,id_email "
+            "from accounts "
+            "where id_user = %s" % self.__userid
+        )
+        account_info = [ ]
+
+        for i in buf:
+            email = self.query_fetch("select login "
+                                     "from emails "
+                                     "where id = %d" % i[5])
+            buf_account = [ ]
+            for j in i:
+                buf_account.append(j)
+            buf_account[5] = ''.join(email[0])
+            account_info.append(buf_account)
+        return account_info
+
     def get_all_emails(self):
         return self.query_fetch("select id,login " \
                                 "from emails " \
                                 "where id_user = %d" % self.__userid)
 
     def get_accounts(self, table_name):
-        if table_name != "accounts" or self.all:
-            id1 = "id_user"
-            id2 = self.__userid
-        else:
+        if self.all and table_name in "accounts":
+            return self.get_all_accounts()
+
+        if self.__emailid:
             id1 = "id_email"
             id2 = self.__emailid
+        else:
+            id1 = "id_user"
+            id2 = self.__userid
+
         return self.query_fetch("select id,service,login,passwd,forgot " \
                                 "from %s " \
                                 "where %s = %s" % (

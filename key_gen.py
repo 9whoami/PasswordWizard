@@ -1,12 +1,12 @@
 # -*- coding: cp1251 -*-
-from __future__ import unicode_literals
-
 __author__ = 'whoami'
 
 from rsa import newkeys, PublicKey, PrivateKey, encrypt, decrypt
 from rsa.pkcs1 import DecryptionError
 from base64 import b64decode, b64encode
 from hashlib import new
+from os.path import sep
+from os.path import exists
 
 
 def encode_md5(data):
@@ -43,23 +43,30 @@ def rsa_gen_key(publicfile='public.key', privatefile='private.key'):
         return pubkey, privkey
 
 
-def rsa_load_key(dir):
+def rsa_load_key(public_file=None, private_file=None, dir=None):
     """
     Загружаем ключи из файлов
-    :param publicfile: файл публичного ключа
-    :param privatefile: файл приватного ключа
+    :param public_file: файл публичного ключа
+    :param private_file: файл приватного ключа
     :param dir: папка с ключами
     :return: возвращаем публичный и приватный ключи
     """
     try:
-        # TODO check files public.key and private.key
-        # TODO using multiplatform
-        with open(dir + 'public.key', 'rb') as f:
-            publicfile = f.read()
-        with open(dir + 'private.key', 'rb') as f:
-            privatefile = f.read()
-        pubkey = PublicKey.load_pkcs1(keyfile=publicfile)
-        privkey = PrivateKey.load_pkcs1(keyfile=privatefile)
+        if dir:
+            if dir[-1] not in sep:
+                dir += sep
+            public_file = dir + 'public.key'
+            private_file = dir + 'private.key'
+
+            if not exists(public_file) or not exists(private_file):
+                raise IOError("Key files not found!")
+
+            with open(public_file, 'rb') as f:
+                public_file = f.read()
+            with open(private_file, 'rb') as f:
+                private_file = f.read()
+        pubkey = PublicKey.load_pkcs1(keyfile=public_file)
+        privkey = PrivateKey.load_pkcs1(keyfile=private_file)
         return pubkey, privkey
     except IOError as e:
         print("Error: %s" % e)

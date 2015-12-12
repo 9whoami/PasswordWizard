@@ -38,24 +38,34 @@ class BoxLayout(QtGui.QWidget):
                                          )
                            )
 
+        wiggets = [ ]
+        if len(account) > 5:
+            self.email = QtGui.QLabel(account[5])
+            wiggets.append(self.email)
+
         self.service = QtGui.QLineEdit(account[1])
         self.service.setPlaceholderText("Service name")
         self.service.setMaxLength(50)
+        wiggets.append(self.service)
 
         self.login = QtGui.QLineEdit(account[2])
         self.login.setPlaceholderText("Login")
         self.login.setMaxLength(100)
+        wiggets.append(self.login)
 
         self.passwd = QtGui.QLineEdit(account[3])
         self.passwd.setPlaceholderText("Password")
         self.passwd.setEchoMode(QtGui.QLineEdit.Password)
+        wiggets.append(self.passwd)
 
         self.forgot = QtGui.QLineEdit(account[4])
         self.forgot.setMaxLength(500)
         self.forgot.setPlaceholderText("Other")
+        wiggets.append(self.forgot)
 
         self.get = QtGui.QPushButton("Actions")
         self.get.setMenu(menu)
+        wiggets.append(self.get)
 
-        return [self.service, self.login, self.passwd, self.forgot, self.get]
+        return wiggets
 

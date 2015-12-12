@@ -18,7 +18,7 @@ class MainWnd(QtGui.QMainWindow):
     keys: a set of keys (dict)
     username: (str)
     """
-    def __init__(self, db, keys, username, parent=None):
+    def __init__(self, db, keys, username, ver, parent=None):
         super(MainWnd, self).__init__(parent)
         self.setWindowIcon(QtGui.QIcon("ico.png"))
         # set wnd StayOnTop
@@ -66,6 +66,7 @@ class MainWnd(QtGui.QMainWindow):
         self.email_label = QtGui.QLabel()
         self.status_bar.addPermanentWidget(self.email_label)
         self.status_bar.addPermanentWidget(QtGui.QLabel(username))
+        self.status_bar.addPermanentWidget(QtGui.QLabel(ver))
         # create main menu for tray icon
         self.main_menu = QtGui.QMenu()
         # setup scroll layouts
@@ -153,7 +154,6 @@ class MainWnd(QtGui.QMainWindow):
                 self.widgets.clear()
 
         self.tbl = tbl
-
         # setup result for database
         if box_layout:
             if isinstance(box_layout, QtGui.QWidget):
@@ -167,15 +167,18 @@ class MainWnd(QtGui.QMainWindow):
         clear_widgets(self)
         slots = create_slots(self)
         # create widgets for accounts
-        for account in accounts:
-            index = account[0]
-            try:
-                print(self.widgets[index])
-            except KeyError:
-                self.widgets[index] = BoxLayout(account, slots, self.tbl)
-                self.scroll_layout.addRow(
-                    self.widgets[index]
-                )
+        try:
+            for account in accounts:
+                index = account[0]
+                try:
+                    print(self.widgets[index])
+                except KeyError:
+                    self.widgets[index] = BoxLayout(account, slots, self.tbl)
+                    self.scroll_layout.addRow(
+                        self.widgets[index]
+                    )
+        except TypeError:
+            pass
         self.show_msg("Show in %s" % self.tbl)
 
     def box_get_passwd(self, box_layout):
@@ -199,10 +202,11 @@ class MainWnd(QtGui.QMainWindow):
     def box_del(self, box_layout):
 
         def del_confirm(box_layout):
-            # TODO MessageBox should be StayOnTop
             confirmation_ok = 1024
 
             msg = QtGui.QMessageBox()
+            msg.setWindowFlags(msg.windowFlags() |
+                               QtCore.Qt.WindowStaysOnTopHint)
             msg.setIcon(QtGui.QMessageBox.Question)
             msg.setText("Are you sure you want to delete %s"
                         % box_layout.login.text())
@@ -222,7 +226,7 @@ class MainWnd(QtGui.QMainWindow):
             self.db.del_account(box_layout.tbl, box_layout.id)
             self.show_msg("Account %s removed" % box_layout.login.text())
             del_(box_layout)
-        elif del_confirm(box_layout):
+        elif isinstance(box_layout.id, str):
             del_(box_layout)
 
     def box_update(self, box_layout):
@@ -319,11 +323,11 @@ class MainWnd(QtGui.QMainWindow):
         QtGui.QApplication.exit()
 
 
-def start(db, keys, login):
+def start(db, keys, login, ver):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
 
-    main_wnd = MainWnd(db, keys, login)
+    main_wnd = MainWnd(db, keys, login, ver)
 
     main_wnd.create_menu_actions(
         dict(Show=main_wnd.show,

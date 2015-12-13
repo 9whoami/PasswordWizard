@@ -13,18 +13,22 @@ class RegWnd(QtGui.QWidget):
     def __init__(self, db, parent=None):
         super(RegWnd, self).__init__(parent)
         self.setWindowTitle("Registration")
+        self.setWindowIcon(QtGui.QIcon("./img/window.png"))
+        self.setMaximumSize(250, 200)
+        self.setMinimumSize(250, 200)
 
         self.label = QtGui.QLabel("Type login or "
                                   "enter the path to the folder "
-                                  "with the keys", self)
+                                  "with the keys")
+        self.label.setWordWrap(True)
 
         self.edit = QtGui.QLineEdit()
         self.edit.setPlaceholderText("Login")
         # self.edit.setMaxLength(20)
 
-        self.btn_ok = QtGui.QPushButton("ok")
+        self.btn_ok = QtGui.QPushButton("Ok")
 
-        self.btn_cancel = QtGui.QPushButton("cancel")
+        self.btn_cancel = QtGui.QPushButton("Cancel")
 
         self.box_label = QtGui.QHBoxLayout()
         self.box_label.addWidget(self.label)
@@ -125,15 +129,16 @@ class RegWnd(QtGui.QWidget):
         if path.exists(username):
             self.username = self.sign_in(username)
             if not self.username:
-                self.label.setText("Не удалось войти. "
-                                   "Убедитесь что фалы ключей не повреждены")
+                self.label.setText("Access denied. "
+                                   "Could not get the keys!")
             else:
                 self.close()
         else:
             if not self.sign_up(username):
-                self.label.setText("Не удалось зарегистрировать аккаунт. "
-                                   "Либо логин указан не верно, "
-                                   "либо уже занят...")
+                self.label.setText("Failed to register an account. "
+                                   "Incorrect login possible "
+                                   "(only letters and numbers), "
+                                   "username is already taken")
             else:
                 self.username = username
                 self.close()
@@ -145,6 +150,7 @@ class RegWnd(QtGui.QWidget):
 def register(db, style=None):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
+    app.setStyleSheet(style)
 
     wnd = RegWnd(db)
 

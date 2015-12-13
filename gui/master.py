@@ -37,7 +37,6 @@ class CollectionIcon(object):
         set_style = QtGui.QIcon()
 
         self.sys_menu = dict(Show=show,
-                             Set_style=set_style,
                              Hide=hide,
                              Quit=quit)
 
@@ -382,13 +381,6 @@ class MainWnd(QtGui.QMainWindow):
         QtGui.QApplication.exit()
 
 
-# for testing
-def set_style(app):
-    style_file = "./gui/main.styl"
-    style = open(style_file).read()
-    app.setStyleSheet(style)
-
-
 def start(db, keys, login, ver, style=None):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
@@ -397,11 +389,7 @@ def start(db, keys, login, ver, style=None):
     main_wnd = MainWnd(db, keys, login, ver)
     main_wnd.create_menu_actions(
         dict(Show=main_wnd.show,
-             Hide=main_wnd.hide,
-             Set_style=partial(
-                 set_style,
-                 app
-             ))
+             Hide=main_wnd.hide)
     )
 
     app.exec_()

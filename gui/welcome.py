@@ -17,7 +17,7 @@ class RegWnd(QtGui.QWidget):
         self.setMaximumSize(250, 200)
         self.setMinimumSize(250, 200)
 
-        self.label = QtGui.QLabel("Type login or "
+        self.label = QtGui.QLabel("Type login to register or "
                                   "enter the path to the folder "
                                   "with the keys")
         self.label.setWordWrap(True)

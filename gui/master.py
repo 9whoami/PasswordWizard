@@ -2,11 +2,13 @@
 __author__ = 'whoami'
 
 import sys
+import time
 from PyQt4 import QtGui, QtCore
 from functools import partial
 from string import digits, ascii_letters
 from random import choice
 from mysql.connector import Error
+from threading import Thread, Lock
 from key_gen import rsa_decode, rsa_encode
 from .box_layout import BoxLayout
 
@@ -38,6 +40,7 @@ class CollectionIcon(object):
 
         self.sys_menu = dict(Show=show,
                              Hide=hide,
+                             Style=set_style,
                              Quit=quit)
 
 
@@ -49,16 +52,19 @@ class MainWnd(QtGui.QMainWindow):
     username: (str)
     """
 
-    def __init__(self, db, keys, username, ver, parent=None):
-        super(MainWnd, self).__init__(parent)
+    def __init__(self, db, keys, username, ver, app, parent=None):
+        super().__init__(parent)
         self.icons = CollectionIcon()
 
         self.setWindowIcon(self.icons.window)
         # set wnd StayOnTop
         self.setWindowFlags(
             self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+        self.connect(self, QtCore.SIGNAL("style()"),
+                     QtCore.SLOT("set_style()"))
 
         self.widgets = {}
+        self.app_style = app
         self.db = db
         self.keys = keys
         self.tbl = None
@@ -139,6 +145,10 @@ class MainWnd(QtGui.QMainWindow):
         self.show_msg("Welcome %s" % username, timeout=5000)
         self.show()
 
+    def mouseDoubleClickEvent(self, *args, **kwargs):
+        self.set_style()
+        super().mouseDoubleClickEvent(*args, **kwargs)
+
     def on_tray_event(self, reason):
         # tray event for double click
         if reason == 2:
@@ -146,6 +156,15 @@ class MainWnd(QtGui.QMainWindow):
                 self.show()
             else:
                 self.hide()
+
+    def th(self):
+        start = time.clock()
+        while True:
+            end = time.clock() - start
+            if end > 3:
+                self.emit(QtCore.SIGNAL('style()'))
+                break
+        return
 
     def form_add(self):
         # show form for add account
@@ -164,9 +183,14 @@ class MainWnd(QtGui.QMainWindow):
             print(self.widgets[index])
             self.show_msg("The form of addition is already displayed")
         except KeyError:
-            self.widgets[index] = self.scroll_layout.addRow(
-                BoxLayout(account, slots, self.tbl, self.icons.btn_menu)
-            )
+            self.widgets[index] = BoxLayout(account,
+                                            slots,
+                                            self.tbl,
+                                            self.icons.btn_menu)
+            self.scroll_layout.addRow(self.widgets[index])
+            t = Thread(target=self.th)
+            t.setDaemon(True)
+            t.start()
 
     def show_accounts(self, tbl, box_layout=None):
 
@@ -380,16 +404,22 @@ class MainWnd(QtGui.QMainWindow):
     def closeEvent(self, event):
         QtGui.QApplication.exit()
 
+    @QtCore.pyqtSlot()
+    def set_style(self):
+        self.app_style["app"].setStyleSheet(self.app_style["style"])
+        return
+
 
 def start(db, keys, login, ver, style=None):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
     app.setStyleSheet(style)
 
-    main_wnd = MainWnd(db, keys, login, ver)
+    main_wnd = MainWnd(db, keys, login, ver, dict(app=app, style=style))
     main_wnd.create_menu_actions(
         dict(Show=main_wnd.show,
-             Hide=main_wnd.hide)
+             Hide=main_wnd.hide,
+             Style=partial(main_wnd.set_style, app))
     )
 
     app.exec_()

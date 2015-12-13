@@ -1,6 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 from sys import exit
 from argparse import ArgumentParser, FileType

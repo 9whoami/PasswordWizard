@@ -1,0 +1,93 @@
+QMenu {
+    background-color: #f0f0f0;
+    margin: 2px; /* немного пространства вокруг меню */
+}
+
+
+QMenu::item:text,
+QLineEdit, QPushButton {
+   font-size: 14px;
+}
+
+QMenu::item {
+    padding: 2px 25px 2px 22px;
+    border: 1px solid transparent; /* резерв пространства для границы выделения */
+    background-color: transparent;
+}
+
+
+QMenu::item:selected { /* когда пользователь выбирает пункт с помощью мыши или клавиатуры */
+    background-color: transparent;
+    border: 1px double #c4c4c4;
+}
+
+
+QPushButton {
+    /* double groove ridge */
+    border: 1px solid #aeaeb0;
+    border-radius: 2px;
+    background-color: transparent;
+    min-width: 110px;
+}
+
+QPushButton::menu-indicator {
+    image: url(./3.png);
+    subcontrol-origin: padding;
+    subcontrol-position: bottom right;
+}
+
+
+
+QLineEdit {
+    border: 1px solid #aeaeb0;
+    border-radius: 2px;
+    padding: 0 8px;
+    background: transparent;
+    selection-background-color: darkgray;
+ }
+
+QScrollBar:vertical {
+    border: 0;
+    background: transparent;
+    width: 10px;
+    margin: 6px 0 6px 0;
+}
+
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::add-line:vertical:hover,
+QScrollBar::sub-line:vertical:hover {
+    background: #aeaeb0;
+}
+
+
+QScrollBar::handle:vertical {
+    background: #cfcfd1;
+    min-height: 5px;
+    border-radius: 5px;
+}
+
+
+QScrollBar::add-line:vertical {
+    border: 0 solid transparent;
+    border-radius: 2px;
+    background: #cfcfd1;
+    height: 5px;
+    subcontrol-position: bottom;
+    subcontrol-origin: margin;
+}
+
+
+QScrollBar::sub-line:vertical {
+    border: 0 solid transparent;
+    border-radius: 2px;
+    background: #cfcfd1;
+    height: 5px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}
+
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}

@@ -142,8 +142,12 @@ class RegWnd(QtGui.QWidget):
         self.close()
 
 
-def register(db):
+def register(db, style=None):
     app = QtGui.QApplication([])
+    app.setStyle("Plastique")
+
     wnd = RegWnd(db)
+
     app.exec_()
+
     return wnd.pubkey, wnd.privkey, wnd.username

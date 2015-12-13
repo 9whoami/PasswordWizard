@@ -11,6 +11,37 @@ from key_gen import rsa_decode, rsa_encode
 from .box_layout import BoxLayout
 
 
+class CollectionIcon(object):
+    def __init__(self):
+        self.window = QtGui.QIcon("./img/window.png")
+
+        self.btn_add = QtGui.QIcon("./img/add.png")
+        self.btn_menu = QtGui.QIcon("./img/down.png")
+        self.btn_random = QtGui.QIcon("./img/female.png")
+
+        self.menu_emails = QtGui.QIcon("./img/email.png")
+        self.menu_accounts1 = QtGui.QIcon("./img/accounts.png")
+        self.menu_accounts2 = QtGui.QIcon("./img/accounts2.png")
+        self.menu_other_accounts = QtGui.QIcon("./img/other.png")
+
+        self.menu_update = QtGui.QIcon("./img/update.png")
+        self.menu_commit = QtGui.QIcon("./img/commit.png")
+        self.menu_get_passwd1 = QtGui.QIcon("./img/unlocked.png")
+        self.menu_get_passwd2 = QtGui.QIcon("./img/locked.png")
+        self.menu_del1 = QtGui.QIcon("./img/del.png")
+        self.menu_del2 = QtGui.QIcon("./img/trash.png")
+
+        show = QtGui.QIcon("./img/show.png")
+        hide = QtGui.QIcon("./img/hide.png")
+        quit = QtGui.QIcon("./img/heart.png")
+        set_style = QtGui.QIcon()
+
+        self.sys_menu = dict(Show=show,
+                             Set_style=set_style,
+                             Hide=hide,
+                             Quit=quit)
+
+
 class MainWnd(QtGui.QMainWindow):
     """
     The main program window
@@ -18,11 +49,15 @@ class MainWnd(QtGui.QMainWindow):
     keys: a set of keys (dict)
     username: (str)
     """
+
     def __init__(self, db, keys, username, ver, parent=None):
         super(MainWnd, self).__init__(parent)
-        self.setWindowIcon(QtGui.QIcon("ico.png"))
+        self.icons = CollectionIcon()
+
+        self.setWindowIcon(self.icons.window)
         # set wnd StayOnTop
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
 
         self.widgets = {}
         self.db = db
@@ -33,30 +68,36 @@ class MainWnd(QtGui.QMainWindow):
         self.tables_name = ("emails", "accounts", "other_accounts",)
 
         # setup tray icon
-        self.tray_icon = QtGui.QSystemTrayIcon(QtGui.QIcon("ico.png"))
+        self.tray_icon = QtGui.QSystemTrayIcon(self.icons.window)
         self.tray_icon.activated.connect(self.on_tray_event)
         self.tray_icon.show()
 
         # main widgets
-        self.btn_add = QtGui.QPushButton('Add')
+        self.btn_add = QtGui.QPushButton(self.icons.btn_add, 'Add')
         self.btn_add.clicked.connect(self.form_add)
 
         # setup main menu for btn_show
         menu_btn_show = QtGui.QMenu()
-        for table in self.tables_name:
-            menu_btn_show.addAction(QtGui.QAction(table,
-                                              self,
-                                              triggered=partial(
-                                                  self.show_accounts,
-                                                  table
-                                              )
-                                              )
-                                )
+        btn_icon = [self.icons.menu_emails,
+                    self.icons.menu_accounts1,
+                    self.icons.menu_other_accounts]
+        for i, table in enumerate(self.tables_name):
+            menu_btn_show.addAction(QtGui.QAction(btn_icon[i],
+                                                  table,
+                                                  self,
+                                                  triggered=partial(
+                                                      self.show_accounts,
+                                                      table
+                                                  )
+                                                  )
+                                    )
 
-        self.btn_show = QtGui.QPushButton("Show")
+        self.btn_show = QtGui.QPushButton(self.icons.btn_menu, "Show")
+        # self.btn_show.setLayoutDirection(QtCore.Qt.RightToLeft)
         self.btn_show.setMenu(menu_btn_show)
 
-        self.btn_genpasswd = QtGui.QPushButton("Gen password")
+        self.btn_genpasswd = QtGui.QPushButton(self.icons.btn_random,
+                                               "Gen password")
         self.btn_genpasswd.clicked.connect(self.generation_passwd)
 
         self.edit = QtGui.QLineEdit()
@@ -113,24 +154,31 @@ class MainWnd(QtGui.QMainWindow):
             self.show_msg("First you need to choose email")
             return
         account = ("add", None, None, None, None,)
-        slots = (dict(name="comit", method=self.box_commit),
-                 dict(name="del", method=self.box_del))
+        slots = (
+            dict(name="comit", method=self.box_commit,
+                 icon=self.icons.menu_commit),
+            dict(name="del", method=self.box_del,
+                 icon=self.icons.menu_del1)
+        )
         index = "add"
         try:
             print(self.widgets[index])
             self.show_msg("The form of addition is already displayed")
         except KeyError:
             self.widgets[index] = self.scroll_layout.addRow(
-                BoxLayout(account, slots, self.tbl)
+                BoxLayout(account, slots, self.tbl, self.icons.btn_menu)
             )
 
     def show_accounts(self, tbl, box_layout=None):
 
         def create_slots(self):
             slots = [
-                dict(name="get password", method=self.box_get_passwd),
-                dict(name="update", method=self.box_update),
-                dict(name="del", method=self.box_del)
+                dict(name="show password", method=self.box_get_passwd,
+                     icon=self.icons.menu_get_passwd2),
+                dict(name="update", method=self.box_update,
+                     icon=self.icons.menu_update),
+                dict(name="del", method=self.box_del,
+                     icon=self.icons.menu_del2)
             ]
 
             if self.tables_name[0] in self.tbl:
@@ -138,7 +186,8 @@ class MainWnd(QtGui.QMainWindow):
                     dict(name="show accounts",
                          method=partial(
                              self.show_accounts,
-                             self.tables_name[1])
+                             self.tables_name[1]),
+                         icon=self.icons.menu_accounts2
                          )
                 )
             return slots
@@ -173,10 +222,11 @@ class MainWnd(QtGui.QMainWindow):
                 try:
                     print(self.widgets[index])
                 except KeyError:
-                    self.widgets[index] = BoxLayout(account, slots, self.tbl)
-                    self.scroll_layout.addRow(
-                        self.widgets[index]
-                    )
+                    self.widgets[index] = BoxLayout(account,
+                                                    slots,
+                                                    self.tbl,
+                                                    self.icons.btn_menu)
+                    self.scroll_layout.addRow(self.widgets[index])
         except TypeError:
             pass
         self.show_msg("Show in %s" % self.tbl)
@@ -193,9 +243,15 @@ class MainWnd(QtGui.QMainWindow):
         box_layout.flag = not box_layout.flag
 
         if box_layout.flag:
+            box_layout.actions[0].setIcon(self.icons.menu_get_passwd1)
+            box_layout.actions[0].setText("hide password")
+
             box_layout.passwd.setEchoMode(QtGui.QLineEdit.Normal)
             box_layout.passwd.setText(passwd)
         else:
+            box_layout.actions[0].setIcon(self.icons.menu_get_passwd2)
+            box_layout.actions[0].setText("show password")
+
             box_layout.passwd.setEchoMode(QtGui.QLineEdit.Password)
             box_layout.passwd.setText(account[2])
 
@@ -253,6 +309,7 @@ class MainWnd(QtGui.QMainWindow):
             box_layout.passwd.setEchoMode(QtGui.QLineEdit.Password)
             box_layout.passwd.setText(passwd)
             box_layout.flag = False
+            box_layout.set_hint()
             self.show_msg("The data have been updated successfully")
         else:
             self.show_msg(msg)
@@ -309,12 +366,14 @@ class MainWnd(QtGui.QMainWindow):
         """Устанавливает пункты меню по клику на иконку в трее"""
         if menu:
             keys = menu.keys()  # [имена пунктов]
-            for key in keys:
+            for i, key in enumerate(keys):
                 function = menu[key]
-                action = self.main_menu.addAction(key)
+                action = self.main_menu.addAction(self.icons.sys_menu[key],
+                                                  key)
                 action.triggered.connect(function)
 
-        quit_action = self.main_menu.addAction('Quit')
+        quit_action = self.main_menu.addAction(self.icons.sys_menu['Quit'],
+                                               'Quit')
         quit_action.triggered.connect(QtGui.QApplication.quit)
         self.tray_icon.setContextMenu(self.main_menu)
         return True
@@ -323,18 +382,30 @@ class MainWnd(QtGui.QMainWindow):
         QtGui.QApplication.exit()
 
 
-def start(db, keys, login, ver):
+# for testing
+def set_style(app):
+    style_file = "./gui/main.styl"
+    style = open(style_file).read()
+    app.setStyleSheet(style)
+
+
+def start(db, keys, login, ver, style=None):
     app = QtGui.QApplication([])
     app.setStyle("Plastique")
+    app.setStyleSheet(style)
 
     main_wnd = MainWnd(db, keys, login, ver)
-
     main_wnd.create_menu_actions(
         dict(Show=main_wnd.show,
-             Hide=main_wnd.hide)
+             Hide=main_wnd.hide,
+             Set_style=partial(
+                 set_style,
+                 app
+             ))
     )
 
     app.exec_()
+
     del main_wnd
     del db
     sys.exit()

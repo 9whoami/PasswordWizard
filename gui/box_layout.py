@@ -12,31 +12,36 @@ class BoxLayout(QtGui.QWidget):
     slots: a set of slots of the field (dict)
     tbl: tabel name (str)
     """
-    def __init__(self, account, slots, tbl, parent=None):
+    def __init__(self, account, slots, tbl, icon, parent=None):
         super(BoxLayout, self).__init__(parent)
 
         self.flag = False
         self.tbl = tbl
         self.id = account[0]
-        widgets = self.create_widgets(account, slots)
-
+        widgets = self.create_widgets(account, slots, icon)
+        self.set_hint()
+        if isinstance(self.id, str):
+            self.passwd.setEchoMode(QtGui.QLineEdit.Normal)
         hbox = QtGui.QHBoxLayout()
         for widget in widgets:
             hbox.addWidget(widget)
 
         self.setLayout(hbox)
 
-    def create_widgets(self, account, slots):
+    def create_widgets(self, account, slots, icon):
         menu = QtGui.QMenu()
-        for slot in slots:
-            menu.addAction(QtGui.QAction(slot["name"],
+        self.actions = [ ]
+        for i, slot in enumerate(slots):
+            self.actions.append(QtGui.QAction(slot["icon"],
+                                         slot["name"],
                                          self,
                                          triggered=partial(
                                              slot["method"],
                                              self
-                                         )
-                                         )
+                                         ))
                            )
+
+            menu.addAction(self.actions[i])
 
         wiggets = [ ]
         if len(account) > 5:
@@ -63,9 +68,13 @@ class BoxLayout(QtGui.QWidget):
         self.forgot.setPlaceholderText("Other")
         wiggets.append(self.forgot)
 
-        self.get = QtGui.QPushButton("Actions")
+        self.get = QtGui.QPushButton(icon, "Actions")
         self.get.setMenu(menu)
         wiggets.append(self.get)
 
         return wiggets
 
+    def set_hint(self):
+        self.service.setToolTip(self.service.text())
+        self.login.setToolTip(self.login.text())
+        self.forgot.setToolTip(self.forgot.text())

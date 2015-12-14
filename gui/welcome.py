@@ -59,6 +59,8 @@ class RegWnd(QtGui.QWidget):
     def set_signals(self):
         self.btn_ok.clicked.connect(self.btn_ok_click)
         self.btn_cancel.clicked.connect(self.btn_cancel_click)
+        self.connect(self.edit, QtCore.SIGNAL("returnPressed()"),
+                     self.btn_ok.click)
 
     def sign_up(self, username):
 

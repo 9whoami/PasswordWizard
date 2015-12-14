@@ -65,7 +65,7 @@ class DataBase(MySQLConnection):
 
     def get_all_accounts(self):
         # TODO the horror remake in the future!!!
-        # список аккаунтов
+        # creating accounts list
         buf = self.query_fetch(
             "select id,service,login,passwd,forgot,id_email "
             "from accounts "

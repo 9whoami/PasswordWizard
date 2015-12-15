@@ -78,7 +78,8 @@ class BoxLayout(QtGui.QWidget):
         menu = QtGui.QMenu()
         for i, slot in enumerate(slots):
             self.actions.append(
-                QtGui.QAction(slot["icon"], slot["name"], self)
+                QtGui.QAction(slot["icon"],
+                              slot["name"], self)
             )
             self.connect(self.actions[i], QtCore.SIGNAL('triggered()'),
                          partial(slot["method"], self))

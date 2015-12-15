@@ -62,6 +62,7 @@ def message_box(*args, parent=None):
     confirmation_ok = (1024, 16384,)
     style_sheet_file = "./gui/styles/QMessageBox.styl"
     message_wnd = QtGui.QMessageBox(parent)
+    # message_wnd.setTextFormat()
 
     try:
         with open(style_sheet_file) as f:

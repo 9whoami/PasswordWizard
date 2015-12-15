@@ -43,12 +43,13 @@ class MainWnd(QtGui.QMainWindow):
         self.icons = {}
         for key, value in icons_path.items():
             self.icons[key] = QtGui.QIcon(value)
+        self.msg = read_cfg(self.ini, "msg")
 
         self.db = args[0] if args else kwargs["db"]
         self.keys = args[1] if args else kwargs["keys"]
         self.username = args[2] if args else kwargs["username"]
         self.ver = "v." + args[3] if args else kwargs["version"]
-        self.app_style = args[4] if args else kwargs["app_style"]
+        # self.app_style = args[4] if args else kwargs["app_style"]
 
         self.widgets = {}
         self.tbl = None
@@ -66,13 +67,20 @@ class MainWnd(QtGui.QMainWindow):
         self.tray_icon.show()
         self.show()
 
-    def mouseDoubleClickEvent(self, *args, **kwargs):
-        self.emit(QtCore.SIGNAL('style()'))
-        super().mouseDoubleClickEvent(*args, **kwargs)
+    def __del__(self):
+        self.clear_widgets()
+        del self.db
+
+        for icon in self.icons:
+            del icon
+
+    # def mouseDoubleClickEvent(self, *args, **kwargs):
+    #     self.emit(QtCore.SIGNAL('style()'))
+    #     super().mouseDoubleClickEvent(*args, **kwargs)
 
     def show(self):
         super().show()
-        self.show_msg("Welcome %s" % self.username, timeout=5000)
+        self.show_msg(self.msg["msg_welcome"].format(self.username), timeout=5000)
 
     def closeEvent(self, *args, **kwargs):
         self.store_window()
@@ -212,6 +220,17 @@ class MainWnd(QtGui.QMainWindow):
                 break
         return
 
+    def clear_widgets(self):
+        if self.widgets:
+            keys = self.widgets.keys()
+            for key in keys:
+                try:
+                    self.box_connect(self.widgets[key], False)
+                    self.widgets[key].deleteLater()
+                except KeyError as e:
+                    print(e)
+            self.widgets.clear()
+
     def form_add(self):
         # show form for add account
         btn_caption = read_cfg(self.ini, "btn_name")
@@ -266,17 +285,6 @@ class MainWnd(QtGui.QMainWindow):
                 )
             return slots_
 
-        def clear_widgets(main):
-            if main.widgets:
-                keys = main.widgets.keys()
-                for key in keys:
-                    try:
-                        self.box_connect(main.widgets[key], False)
-                        main.widgets[key].deleteLater()
-                    except KeyError as e:
-                        print(e)
-                main.widgets.clear()
-
         self.tbl = tbl
         # setup result for database
         if box_layout:
@@ -288,7 +296,7 @@ class MainWnd(QtGui.QMainWindow):
 
         accounts = self.db.get_accounts(self.tbl)
         # clear scroll area
-        clear_widgets(self)
+        self.clear_widgets()
         slots = create_slots(self)
         # create widgets for accounts
         try:
@@ -305,7 +313,7 @@ class MainWnd(QtGui.QMainWindow):
                     self.scroll_layout.addRow(self.widgets[index])
         except TypeError:
             pass
-        self.show_msg("Show in %s" % self.tbl)
+        self.show_msg(self.msg["msg_show_accounts"].format(self.tbl))
 
     def box_connect(self, box_layout, flag=True):
         if flag:
@@ -349,13 +357,15 @@ class MainWnd(QtGui.QMainWindow):
 
     def box_del(self, box_layout):
 
-        def del_confirm(box):
+        def del_confirm(cls, box):
             return message_box(
-                "Are you sure you want to delete %s" % box.login.text(),
+                cls.msg["confirm_del"].format(box.login.text()) \
+                if box.tbl not in cls.tables_name["emails"] else \
+                cls.msg["confirm_del_email"].format("\n", "\n", box.login.text()),
                 QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel,
                 QtGui.QMessageBox.Warning,
-                "Confirmation",
-                self.icons["window"],
+                cls.msg["title_confirm_del"],
+                cls.icons["window"],
                 parent=self)
 
         def del_(box_layuot):
@@ -367,26 +377,26 @@ class MainWnd(QtGui.QMainWindow):
             except KeyError:
                 pass
 
-        if isinstance(box_layout.id, int) and del_confirm(box_layout):
+        if isinstance(box_layout.id, int) and del_confirm(self, box_layout):
             self.db.del_account(box_layout.tbl, box_layout.id)
-            self.show_msg("Account %s removed" % box_layout.login.text())
+            self.show_msg(self.msg["msg_account_del"].format(box_layout.login.text()))
             del_(box_layout)
         elif isinstance(box_layout.id, str):
             del_(box_layout)
 
     def box_update(self, box_layout):
         if not box_layout.flag:
-            self.show_msg("First get your password")
+            self.show_msg(self.msg["msg_update_error_1"])
             return
 
         passwd = box_layout.passwd.text()
         if not passwd:
-            self.show_msg("Type password")
+            self.show_msg(self.msg["msg_update_error_2"])
             return
 
         passwd = rsa_encode(passwd, self.keys["public"])
         if not passwd:
-            self.show_msg("Failed to encrypt password")
+            self.show_msg(self.msg["msg_update_error_3"])
             return
 
         result, msg = self.db.update_account(
@@ -402,19 +412,19 @@ class MainWnd(QtGui.QMainWindow):
             self.box_flag_change(box_layout, passwd)
             self.box_connect(box_layout, False)
             box_layout.set_hint()
-            self.show_msg("The data have been updated successfully")
+            self.show_msg(self.msg["msg_update_ok"])
         else:
-            self.show_msg(msg)
+            self.show_msg(self.msg["msg_update_error_4"])
 
     def box_commit(self, box_layout):
         passwd = box_layout.passwd.text()
         if not passwd:
-            self.show_msg("Type password")
+            self.show_msg(self.msg["msg_password_empty"])
             return
         passwd = rsa_encode(passwd, self.keys["public"])
 
         if not passwd:
-            self.show_msg("Failed to encrypt password")
+            self.show_msg(self.msg["msg_encrypt_error"])
             return
         # dict methods on add
         db_add = dict(emails=self.db.insert_email,
@@ -431,7 +441,7 @@ class MainWnd(QtGui.QMainWindow):
         del self.widgets["add"]
         box_layout.deleteLater()
         self.show_accounts(self.tbl, True)
-        self.show_msg("Account added %s" % box_layout.login.text())
+        self.show_msg(self.msg["msg_account_add"].format(box_layout.login.text()))
 
     def show_msg(self, msg, timeout=3000):
         self.status_bar.showMessage(str(msg), timeout)
@@ -450,10 +460,10 @@ class MainWnd(QtGui.QMainWindow):
         self.tray_icon.setContextMenu(self.main_menu)
         return True
 
-    @QtCore.pyqtSlot()
-    def set_style(self):
-        self.app_style["app"].setStyleSheet(get_style_sheet())
-        return
+    # @QtCore.pyqtSlot()
+    # def set_style(self):
+    #     self.app_style["app"].setStyleSheet(get_style_sheet())
+    #     return
 
 
 def start(db, keys, login, ver, style=None):
@@ -461,9 +471,12 @@ def start(db, keys, login, ver, style=None):
     app.setStyle("Plastique")
     app.setStyleSheet(style)
 
-    main_wnd = MainWnd(db, keys, login, ver, dict(app=app, style=style))
+    main_wnd = MainWnd(db, keys, login, ver)
     main_wnd.create_menu_actions(
         dict(show=main_wnd.show,
              hide=main_wnd.hide, )
     )
-    return app.exec_()
+
+    app.exec_()
+    del main_wnd
+    return

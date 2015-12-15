@@ -2,12 +2,14 @@
 __author__ = 'whoami'
 
 from mysql.connector import MySQLConnection, Error
-from db.dbconfig import read_db_config
+from config_read import read_cfg
 
 
 class DataBase(MySQLConnection):
     def __init__(self):
-        db_config = read_db_config()
+        db_config = read_cfg(file="config.ini",
+                         section="mysql")
+        self.tables = read_cfg("resources.ini", "table_db")
         try:
             super().__init__(**db_config)
             self.cursor = self.cursor()
@@ -20,10 +22,8 @@ class DataBase(MySQLConnection):
             raise RuntimeError()
 
     def sign_in(self, password):
-        rows = self.query_fetch("select * "
-                                "from users "
-                                "where passwd = '%s'"
-                                % password)
+        rows = self.query_fetch("select * from {} where passwd = {!r}".format(
+            self.tables["users"], password))
         if rows:
             self.set_user_id(rows[0][0])
             return rows[0][1]
@@ -43,9 +43,11 @@ class DataBase(MySQLConnection):
         if id:
             self.__emailid = id
             rows = self.query_fetch("select login " \
-                                    "from emails " \
-                                    "where id = %d" % id)
-            self.__email_login = ' '.join(rows[0])
+                                    "from {} " \
+                                    "where id = {}".format(
+                self.tables["emails"], id
+            ))
+            self.__email_login = rows[0][0]
             self.all = False
         else:
             self.__email_login = self.__emailid = None
@@ -53,8 +55,8 @@ class DataBase(MySQLConnection):
 
     def check_user(self, login):
         try:
-            self.cursor.execute("SELECT username "
-                                "FROM users")
+            self.cursor.execute("select username "
+                                "from {}".format(self.tables["users"]))
             rows = self.cursor.fetchall()
             for row in rows:
                 if login in row:
@@ -64,33 +66,31 @@ class DataBase(MySQLConnection):
             return False
 
     def get_all_accounts(self):
-        # TODO the horror remake in the future!!!
         # creating accounts list
-        buf = self.query_fetch(
+        accounts = self.query_fetch(
             "select id,service,login,passwd,forgot,id_email "
             "from accounts "
             "where id_user = %s" % self.__userid
         )
-        account_info = [ ]
 
-        for i in buf:
+        for j, i in enumerate(accounts):
             email = self.query_fetch("select login "
                                      "from emails "
                                      "where id = %d" % i[5])
-            buf_account = [ ]
-            for j in i:
-                buf_account.append(j)
-            buf_account[5] = ''.join(email[0])
-            account_info.append(buf_account)
-        return account_info
+            i = list(i)
+            i[5] = email[0][0]
+            accounts[j] = i
 
-    def get_all_emails(self):
-        return self.query_fetch("select id,login " \
-                                "from emails " \
-                                "where id_user = %d" % self.__userid)
+        return accounts
+
+    # def get_all_emails(self):
+    #     return self.query_fetch("select id,login " \
+    #                             "from {} " \
+    #                             "where id_user = {}".format(
+    #         self.tables["emails"], self.__userid))
 
     def get_accounts(self, table_name):
-        if self.all and table_name in "accounts":
+        if self.all and table_name in self.tables["accounts"]:
             return self.get_all_accounts()
 
         if self.__emailid:
@@ -101,19 +101,19 @@ class DataBase(MySQLConnection):
             id2 = self.__userid
 
         return self.query_fetch("select id,service,login,passwd,forgot " \
-                                "from %s " \
-                                "where %s = %s" % (
+                                "from {} " \
+                                "where {} = {}".format(
                                     table_name, id1, id2))
 
     def get_account(self, table_name, id):
         rows = self.query_fetch("select service,login,passwd,forgot " \
-                                "from %s " \
-                                "where id = %s" % (table_name, id))
+                                "from {} " \
+                                "where id = {}".format(table_name, id))
         return rows[0]
 
     def insert_users(self, data):
-        query = "insert into users(passwd,username) " \
-                "values(%s,%s)"
+        query = "insert into {}(passwd,username) " \
+                "values(%s,%s)".format(self.tables["users"])
         if self.check_user(data[-1]):
             self.query_insert(query, data)
             return True
@@ -122,29 +122,36 @@ class DataBase(MySQLConnection):
 
     def insert_email(self, data):
         data.append(self.__userid)
-        query = "insert into emails(service,login,passwd,forgot,id_user) " \
-                "values (%s,%s,%s,%s,%s)"
+        query = "insert into {}(service,login,passwd,forgot,id_user) " \
+                "values (%s,%s,%s,%s,%s)".format(self.tables["emails"])
         return self.query_insert(query, data)
 
     def insert_account(self, data):
         data.append(self.__userid)
         data.append(self.__emailid)
         query = "insert into " \
-                "accounts(service,login,passwd,forgot,id_user,id_email) " \
-                "values (%s,%s,%s,%s,%s,%s)"
+                "{}(service,login,passwd,forgot,id_user,id_email) " \
+                "values (%s,%s,%s,%s,%s,%s)".format(self.tables["accounts"])
         return self.query_insert(query, data)
 
     def insert_other_account(self, data):
         data.append(self.__userid)
         query = "insert into " \
-                "other_accounts(service,login,passwd,forgot,id_user) " \
-                "values (%s,%s,%s,%s,%s)"
+                "{}(service,login,passwd,forgot,id_user) " \
+                "values (%s,%s,%s,%s,%s)".format(self.tables["other"])
         return self.query_insert(query, data)
 
-    def update_account(self, tabel, service, login, passwd, forgot, id):
-        query = "update %s " \
-                "set service = '%s', login = '%s', passwd = '%s', forgot = '%s' " \
-                "where id = %d;" % (tabel, service, login, passwd, forgot, id)
+    def update_account(self, *args):
+        """
+        pass tabel name, service, login, passwd, forgot, field id
+        :param args:
+        :return:
+        """
+        query = (
+            "update {} "
+            "set service = {!r}, login = {!r}, passwd = {!r}, forgot = {!r} "
+            "where id = {};".format(*args)
+        )
         try:
             self.cursor.execute(query)
             self.commit()
@@ -153,10 +160,11 @@ class DataBase(MySQLConnection):
             print(e)
             return False, e
 
-    def del_account(self, table_name, id):
+    def del_account(self, *args):
+        """table_name, id"""
         query = "delete " \
-                "from %s " \
-                "where id = %s" % (table_name, id)
+                "from {} " \
+                "where id = {}".format(*args)
         try:
             self.cursor.execute(query)
             self.commit()

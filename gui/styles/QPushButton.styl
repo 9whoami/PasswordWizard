@@ -1,0 +1,30 @@
+QPushButton {
+  border: 1px solid #ededed;
+
+  color: #292929;
+  font-size: 12px;
+  font-family: 'Trebuchet MS', sans-serif;
+
+  min-width: 86px;
+  max-width: 86px;
+
+  border-radius: 2px;
+  background-color: transparent;
+}
+
+QPushButton:hover {
+  border: 2px groove #4d88c0;
+  background-color: transparent;
+}
+
+QPushButton::menu-indicator {
+    image: url(./3.png);
+    subcontrol-origin: padding;
+    subcontrol-position: bottom right;
+}
+
+
+QPushButton:focus {
+  border: 1px solid #ededed;
+  border-radius: 2px;
+}

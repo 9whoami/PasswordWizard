@@ -1,9 +1,7 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
 
-import sys
-import time
-import re
+from time import clock
 from PyQt4 import QtGui, QtCore
 from functools import partial
 from string import digits, ascii_letters
@@ -12,7 +10,10 @@ from mysql.connector import Error
 from threading import Thread, Lock
 from key_gen import rsa_decode, rsa_encode
 from .box_layout import BoxLayout
-# TODO put the string data in the resources. I need to sleep))
+from .style import get_style_sheet
+from .message_box import message_box
+from config_read import read_cfg, write_cfg
+
 
 class QWidget(QtGui.QWidget):
     def __init__(self, wnd):
@@ -27,111 +28,113 @@ class QWidget(QtGui.QWidget):
             pass
 
 
-class CollectionIcon(object):
-    def __init__(self):
-        self.window = QtGui.QIcon("./img/window.png")
-
-        self.btn_add = QtGui.QIcon("./img/add.png")
-        self.btn_menu = QtGui.QIcon("./img/down.png")
-        self.btn_random = QtGui.QIcon("./img/female.png")
-
-        self.menu_emails = QtGui.QIcon("./img/email.png")
-        self.menu_accounts1 = QtGui.QIcon("./img/accounts.png")
-        self.menu_accounts2 = QtGui.QIcon("./img/accounts2.png")
-        self.menu_other_accounts = QtGui.QIcon("./img/other.png")
-
-        self.menu_update = QtGui.QIcon("./img/update.png")
-        self.menu_commit = QtGui.QIcon("./img/commit.png")
-        self.menu_get_passwd1 = QtGui.QIcon("./img/unlocked.png")
-        self.menu_get_passwd2 = QtGui.QIcon("./img/locked.png")
-        self.menu_del1 = QtGui.QIcon("./img/del.png")
-        self.menu_del2 = QtGui.QIcon("./img/trash.png")
-
-        show = QtGui.QIcon("./img/show.png")
-        hide = QtGui.QIcon("./img/hide.png")
-        quit_ = QtGui.QIcon("./img/heart.png")
-        set_style = QtGui.QIcon()
-
-        self.sys_menu = dict(Show=show,
-                             Hide=hide,
-                             Style=set_style,
-                             Quit=quit_)
-
-
 class MainWnd(QtGui.QMainWindow):
     """
     The main program window
-    db: instance of DataBase
-    keys: a set of keys (dict)
-    username: (str)
+    db, keys, username, ver, app, parent=None
     """
 
-    def __init__(self, db, keys, username, ver, app, parent=None):
-        super().__init__(parent)
-        self.icons = CollectionIcon()
+    def __init__(self, *args, **kwargs):
+        super().__init__()
 
-        self.setWindowIcon(self.icons.window)
-        # set wnd StayOnTop
-        self.setWindowFlags(
-            self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
-        self.connect(self, QtCore.SIGNAL("style()"),
-                     QtCore.SLOT("set_style()"))
+        self.ini = "resources.ini"
 
-        ver = "v." + ver
+        icons_path = read_cfg(self.ini, 'image')
+        self.icons = {}
+        for key, value in icons_path.items():
+            self.icons[key] = QtGui.QIcon(value)
+
+        self.db = args[0] if args else kwargs["db"]
+        self.keys = args[1] if args else kwargs["keys"]
+        self.username = args[2] if args else kwargs["username"]
+        self.ver = "v." + args[3] if args else kwargs["version"]
+        self.app_style = args[4] if args else kwargs["app_style"]
+
         self.widgets = {}
-        self.app_style = app
-        self.db = db
-        self.keys = keys
         self.tbl = None
         self.last_widget = None
         self.passwd_length = 6  # starting length for password
         # set tables_name name for data base
-        self.tables_name = ("emails", "accounts", "other_accounts",)
+        self.tables_name = read_cfg(self.ini, "table_db")
 
-        # setup tray icon
-        self.tray_icon = QtGui.QSystemTrayIcon(self.icons.window)
-        self.tray_icon.activated.connect(self.on_tray_event)
+        self.create_widgets()
+        self.set_signals()
+        self.set_layouts()
+        self.set_window()
+
+        self.show_accounts(self.tables_name["emails"])
         self.tray_icon.show()
+        self.show()
 
-        # main widgets
-        self.btn_add = QtGui.QPushButton(self.icons.btn_add, 'Add')
-        self.btn_add.clicked.connect(self.form_add)
+    def mouseDoubleClickEvent(self, *args, **kwargs):
+        self.emit(QtCore.SIGNAL('style()'))
+        super().mouseDoubleClickEvent(*args, **kwargs)
 
-        # setup main menu for btn_show
-        menu_btn_show = QtGui.QMenu()
-        btn_icon = [self.icons.menu_emails,
-                    self.icons.menu_accounts1,
-                    self.icons.menu_other_accounts]
-        for i, table in enumerate(self.tables_name):
-            menu_btn_show.addAction(QtGui.QAction(btn_icon[i],
-                                                  table,
-                                                  self,
-                                                  triggered=partial(
-                                                      self.show_accounts,
-                                                      table)
-                                                  )
-                                    )
+    def show(self):
+        super().show()
+        self.show_msg("Welcome %s" % self.username, timeout=5000)
 
-        self.btn_show = QtGui.QPushButton(self.icons.btn_menu, "Show")
-        self.btn_show.setMenu(menu_btn_show)
+    def closeEvent(self, *args, **kwargs):
+        self.store_window()
 
-        self.btn_genpasswd = QtGui.QPushButton(self.icons.btn_random,
-                                               "Gen pwd")
-        self.btn_genpasswd.clicked.connect(self.generation_passwd)
+    def set_window(self):
+        wnd_params = read_cfg(self.ini, "window")
+        self.setWindowIcon(self.icons["window"])
+        self.setWindowTitle(wnd_params["name"])
+        size = wnd_params["size"][1:-1].split(",")
+        self.resize(int(size[1]), int(size[0]))
+        self.setWindowFlags(self.windowFlags() |
+                            QtCore.Qt.WindowStaysOnTopHint)
+
+    def store_window(self):
+        size = self.size()
+        write_cfg(self.ini, "window", "size",
+                  (size.height(), size.width(),))
+        return
+
+    def create_widgets(self):
+        btn_caption = read_cfg(self.ini, "btn_name")
+        tool_tip = read_cfg(self.ini, "tool_tip")
+        self.tray_icon = QtGui.QSystemTrayIcon(self.icons["window"])
+        self.main_menu = QtGui.QMenu()
+        self.btn_add = QtGui.QPushButton(self.icons["add"], btn_caption["add"])
+        self.btn_add.setToolTip(tool_tip["add"])
+
+        self.btn_genpasswd = QtGui.QPushButton(self.icons["random"],
+                                               btn_caption["gen"])
+        self.btn_genpasswd.setObjectName("btnPwd")
+
+        self.email_label = QtGui.QLabel()
 
         self.edit = QtGui.QLineEdit()
         self.edit.setObjectName("editPwd")
-        self.btn_genpasswd.click()
-        # setup statusbar
+        self.edit.setToolTip(tool_tip["edit_pwd"])
+
         self.status_bar = QtGui.QStatusBar()
-        # create label for email
-        self.email_label = QtGui.QLabel()
         self.status_bar.addPermanentWidget(self.email_label)
-        self.status_bar.addPermanentWidget(QtGui.QLabel(username))
-        self.status_bar.addPermanentWidget(QtGui.QLabel(ver))
-        # create main menu for tray icon
-        self.main_menu = QtGui.QMenu()
-        # setup scroll layouts
+        self.status_bar.addPermanentWidget(
+            QtGui.QLabel(self.username)
+        )
+        self.status_bar.addPermanentWidget(QtGui.QLabel(self.ver))
+
+        # setup main menu for btn_show
+        menu_btn_show = QtGui.QMenu()
+        for key, table in self.tables_name.items():
+            try:
+                action = QtGui.QAction(self.icons[key], table, self,
+                                       triggered=partial(self.show_accounts,
+                                                         table))
+                action.setToolTip(tool_tip[key])
+                menu_btn_show.addAction(action)
+            except KeyError:
+                continue
+
+        self.btn_show = QtGui.QPushButton(self.icons["down"],
+                                          btn_caption["show"])
+        self.btn_show.setToolTip(tool_tip["show"])
+        self.btn_show.setMenu(menu_btn_show)
+
+    def set_layouts(self):
         self.scroll_layout = QtGui.QFormLayout()
         self.scroll_layout.setAlignment(QtCore.Qt.AlignHCenter |
                                         QtCore.Qt.AlignTop)
@@ -162,13 +165,13 @@ class MainWnd(QtGui.QMainWindow):
 
         self.setCentralWidget(self.central_widget)
 
-        self.show_accounts(self.tables_name[0])
-        self.show_msg("Welcome %s" % username, timeout=5000)
-        self.show()
-
-    def mouseDoubleClickEvent(self, *args, **kwargs):
-        self.emit(QtCore.SIGNAL('style()'))
-        super().mouseDoubleClickEvent(*args, **kwargs)
+    def set_signals(self):
+        self.connect(self, QtCore.SIGNAL("style()"),
+                     QtCore.SLOT("set_style()"))
+        self.tray_icon.activated.connect(self.on_tray_event)
+        self.btn_add.clicked.connect(self.form_add)
+        self.btn_genpasswd.clicked.connect(self.generation_passwd)
+        self.btn_genpasswd.click()
 
     def on_tray_event(self, reason):
         # tray event for double click
@@ -178,10 +181,32 @@ class MainWnd(QtGui.QMainWindow):
             else:
                 self.hide()
 
+    def generation_passwd(self):
+        length = self.edit.text()
+        if length and length.isdigit():
+            self.passwd_length = int(length)
+        elif not self.passwd_length:
+            self.edit.setText("the length password is not specified")
+            return
+        tool_tip = read_cfg(self.ini, "tool_tip")
+        self.btn_genpasswd.setToolTip(
+            tool_tip["gen_pwd"].format(self.passwd_length))
+        spec = '!@#$%&*?^'
+        digits_ = digits
+        all_symbols = spec + digits_ + ascii_letters
+
+        count = 0
+        res = []
+        while count < self.passwd_length:
+            res.append(choice(all_symbols))
+            count += 1
+        password = ''.join(res)
+        self.edit.setText(password)
+
     def th(self):
-        start_ = time.clock()
+        start_ = clock()
         while True:
-            end = time.clock() - start_
+            end = clock() - start_
             if end > 3:
                 self.emit(QtCore.SIGNAL('style()'))
                 break
@@ -189,25 +214,28 @@ class MainWnd(QtGui.QMainWindow):
 
     def form_add(self):
         # show form for add account
-        if self.tbl in self.tables_name[1] and not self.db.get_email_id():
+        btn_caption = read_cfg(self.ini, "btn_name")
+
+        if self.tbl in self.tables_name["accounts"] and \
+                not self.db.get_email_id():
             self.show_msg("First you need to choose email")
             return
         account = ("add", None, None, None, None,)
         slots = (
-            dict(name="comit", method=self.box_commit,
-                 icon=self.icons.menu_commit),
-            dict(name="del", method=self.box_del,
-                 icon=self.icons.menu_del1)
+            dict(name=btn_caption["commit"], method=self.box_commit,
+                 icon=self.icons["commit"]),
+            dict(name=btn_caption["del"], method=self.box_del,
+                 icon=self.icons["del"])
         )
         index = "add"
         try:
             print(self.widgets[index])
             self.show_msg("The form of addition is already displayed")
         except KeyError:
-            self.widgets[index] = BoxLayout(account,
+            self.widgets[index] = BoxLayout(self.tbl,
+                                            account,
                                             slots,
-                                            self.tbl,
-                                            self.icons.btn_menu)
+                                            self.icons["down"])
             self.box_connect(self.widgets[index])
             self.scroll_layout.addRow(self.widgets[index])
             t = Thread(target=self.th)
@@ -217,22 +245,23 @@ class MainWnd(QtGui.QMainWindow):
     def show_accounts(self, tbl, box_layout=None):
 
         def create_slots(main):
+            btn_caption = read_cfg(self.ini, "btn_name")
             slots_ = [
-                dict(name="show password", method=main.box_get_passwd,
-                     icon=main.icons.menu_get_passwd2),
-                dict(name="update", method=main.box_update,
-                     icon=main.icons.menu_update),
-                dict(name="del", method=main.box_del,
-                     icon=main.icons.menu_del2)
+                dict(name=btn_caption["show_pwd"], method=main.box_get_passwd,
+                     icon=main.icons["locked"]),
+                dict(name=btn_caption["update"], method=main.box_update,
+                     icon=main.icons["update"]),
+                dict(name=btn_caption["del"], method=main.box_del,
+                     icon=main.icons["trash"])
             ]
 
-            if main.tables_name[0] in main.tbl:
+            if main.tables_name["emails"] in main.tbl:
                 slots_.append(
-                    dict(name="show accounts",
+                    dict(name=btn_caption["show_accounts"],
                          method=partial(
                              main.show_accounts,
-                             main.tables_name[1]),
-                         icon=main.icons.menu_accounts2
+                             main.tables_name["accounts"]),
+                         icon=main.icons["accounts_2"]
                          )
                 )
             return slots_
@@ -268,10 +297,10 @@ class MainWnd(QtGui.QMainWindow):
                 try:
                     print(self.widgets[index])
                 except KeyError:
-                    self.widgets[index] = BoxLayout(account,
+                    self.widgets[index] = BoxLayout(self.tbl,
+                                                    account,
                                                     slots,
-                                                    self.tbl,
-                                                    self.icons.btn_menu)
+                                                    self.icons["down"])
                     self.last_widget = self.widgets[index]
                     self.scroll_layout.addRow(self.widgets[index])
         except TypeError:
@@ -286,6 +315,27 @@ class MainWnd(QtGui.QMainWindow):
             self.disconnect(self.edit, QtCore.SIGNAL("textChanged(QString)"),
                             box_layout.passwd.setText)
 
+    def box_flag_change(self, *args):
+        args[0].flag = not args[0].flag
+        tool_tip = read_cfg(self.ini, "tool_tip")
+        btn_name = read_cfg(self.ini, "btn_name")
+        if args[0].flag:
+            self.box_connect(args[0])
+            args[0].actions[0].setIcon(self.icons["unlocked"])
+            args[0].actions[0].setText(btn_name["hide_pwd"])
+            args[0].actions[0].setToolTip(tool_tip["hide_pwd"])
+
+            args[0].passwd.setEchoMode(QtGui.QLineEdit.Normal)
+            args[0].passwd.setText(args[1])
+        else:
+            self.box_connect(args[0], False)
+            args[0].actions[0].setIcon(self.icons["locked"])
+            args[0].actions[0].setText(btn_name["show_pwd"])
+            args[0].actions[0].setToolTip(tool_tip["show_pwd"])
+
+            args[0].passwd.setEchoMode(QtGui.QLineEdit.Password)
+            args[0].passwd.setText(args[2] if len(args) == 3 else args[1])
+
     def box_get_passwd(self, box_layout):
         # showing or hide password
         account = self.db.get_account(box_layout.tbl, box_layout.id)
@@ -295,38 +345,18 @@ class MainWnd(QtGui.QMainWindow):
             self.show_msg("Unable to retrieve your password")
             return
 
-        box_layout.flag = not box_layout.flag
-
-        if box_layout.flag:
-            self.box_connect(box_layout)
-            box_layout.actions[0].setIcon(self.icons.menu_get_passwd1)
-            box_layout.actions[0].setText("hide password")
-
-            box_layout.passwd.setEchoMode(QtGui.QLineEdit.Normal)
-            box_layout.passwd.setText(passwd)
-        else:
-            self.box_connect(box_layout, False)
-            box_layout.actions[0].setIcon(self.icons.menu_get_passwd2)
-            box_layout.actions[0].setText("show password")
-
-            box_layout.passwd.setEchoMode(QtGui.QLineEdit.Password)
-            box_layout.passwd.setText(account[2])
+        self.box_flag_change(box_layout, passwd, account[2])
 
     def box_del(self, box_layout):
 
         def del_confirm(box):
-            confirmation_ok = 1024
-
-            msg = QtGui.QMessageBox()
-            msg.setWindowFlags(msg.windowFlags() |
-                               QtCore.Qt.WindowStaysOnTopHint)
-            msg.setIcon(QtGui.QMessageBox.Question)
-            msg.setText("Are you sure you want to delete %s"
-                        % box.login.text())
-            msg.setWindowTitle("Confirm")
-            msg.setStandardButtons(QtGui.QMessageBox.Ok |
-                                   QtGui.QMessageBox.Cancel)
-            return msg.exec_() == confirmation_ok
+            return message_box(
+                "Are you sure you want to delete %s" % box.login.text(),
+                QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel,
+                QtGui.QMessageBox.Warning,
+                "Confirmation",
+                self.icons["window"],
+                parent=self)
 
         def del_(box_layuot):
             box_layuot.deleteLater()
@@ -369,11 +399,7 @@ class MainWnd(QtGui.QMainWindow):
         )
 
         if result:
-            box_layout.passwd.setEchoMode(QtGui.QLineEdit.Password)
-            box_layout.passwd.setText(passwd)
-            box_layout.actions[0].setIcon(self.icons.menu_get_passwd2)
-            box_layout.actions[0].setText("show password")
-            box_layout.flag = False
+            self.box_flag_change(box_layout, passwd)
             self.box_connect(box_layout, False)
             box_layout.set_hint()
             self.show_msg("The data have been updated successfully")
@@ -407,53 +433,26 @@ class MainWnd(QtGui.QMainWindow):
         self.show_accounts(self.tbl, True)
         self.show_msg("Account added %s" % box_layout.login.text())
 
-    def generation_passwd(self):
-        length = self.edit.text()
-        if length and length.isdigit():
-            self.passwd_length = int(length)
-        elif not self.passwd_length:
-            self.edit.setText("the length password is not specified")
-            return
-
-        spec = '!@#$%&*?^'
-        digits_ = digits
-        all_symbols = spec + digits_ + ascii_letters
-
-        count = 0
-        res = []
-        while count < self.passwd_length:
-            res.append(choice(all_symbols))
-            count += 1
-        password = ''.join(res)
-        self.edit.setText(password)
-
     def show_msg(self, msg, timeout=3000):
         self.status_bar.showMessage(str(msg), timeout)
 
     def create_menu_actions(self, menu=None):
         """Устанавливает пункты меню по клику на иконку в трее"""
         if menu:
-            keys = menu.keys()  # [имена пунктов]
-            for i, key in enumerate(keys):
+            for key in menu.keys():
                 function = menu[key]
-                action = self.main_menu.addAction(self.icons.sys_menu[key],
-                                                  key)
+                action = self.main_menu.addAction(self.icons[key],
+                                                  key.capitalize())
                 action.triggered.connect(function)
 
-        quit_action = self.main_menu.addAction(self.icons.sys_menu['Quit'],
-                                               'Quit')
+        quit_action = self.main_menu.addAction(self.icons['heart'], 'Quit')
         quit_action.triggered.connect(QtGui.QApplication.quit)
         self.tray_icon.setContextMenu(self.main_menu)
         return True
 
-    def closeEvent(self, event):
-        self.close()
-
     @QtCore.pyqtSlot()
     def set_style(self):
-        style_file = "./gui/main.styl"
-        style = open(style_file).read()
-        self.app_style["app"].setStyleSheet(style)
+        self.app_style["app"].setStyleSheet(get_style_sheet())
         return
 
 
@@ -464,13 +463,7 @@ def start(db, keys, login, ver, style=None):
 
     main_wnd = MainWnd(db, keys, login, ver, dict(app=app, style=style))
     main_wnd.create_menu_actions(
-        dict(Show=main_wnd.show,
-             Hide=main_wnd.hide,
-             Style=partial(main_wnd.set_style, app))
+        dict(show=main_wnd.show,
+             hide=main_wnd.hide, )
     )
-
-    app.exec_()
-
-    del main_wnd
-    del db
-    sys.exit()
+    return app.exec_()

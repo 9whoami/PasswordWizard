@@ -2,33 +2,38 @@
 __author__ = 'whoami'
 
 import sys
-import re
+from re import match
 from threading import Thread
 from PyQt4 import QtGui, QtCore
 from os import path, getcwd
 from key_gen import encode_md5, rsa_gen_key, rsa_load_key
+from .message_box import message_box
+from config_read import read_cfg
 
 
 class RegWnd(QtGui.QWidget):
     def __init__(self, db, parent=None):
         super(RegWnd, self).__init__(parent)
-        self.setWindowTitle("Registration")
-        self.setWindowIcon(QtGui.QIcon("./img/window.png"))
+
+        self.res = read_cfg("resources.ini", "welcome")
+        self.icon_wnd = QtGui.QIcon(self.res["icon"])
+
+        self.setWindowTitle(self.res["title"])
+        self.setWindowIcon(self.icon_wnd)
         self.setMaximumSize(250, 200)
         self.setMinimumSize(250, 200)
 
-        self.label = QtGui.QLabel("Type login to register or "
-                                  "enter the path to the folder "
-                                  "with the keys")
+        self.label = QtGui.QLabel(self.res["msg_welcome"])
+        self.label.setObjectName("welcome")
         self.label.setWordWrap(True)
 
         self.edit = QtGui.QLineEdit()
-        self.edit.setPlaceholderText("Login")
+        self.edit.setPlaceholderText(self.res["edit_holder_text"])
         # self.edit.setMaxLength(20)
 
-        self.btn_ok = QtGui.QPushButton("Ok")
+        self.btn_ok = QtGui.QPushButton(self.res["btn_ok"])
 
-        self.btn_cancel = QtGui.QPushButton("Cancel")
+        self.btn_cancel = QtGui.QPushButton(self.res["btn_cancel"])
 
         self.box_label = QtGui.QHBoxLayout()
         self.box_label.addWidget(self.label)
@@ -64,30 +69,25 @@ class RegWnd(QtGui.QWidget):
 
     def sign_up(self, username):
 
-        def confirm():
-            confirmation_ok = 1024
-
-            msg = QtGui.QMessageBox()
-            msg.setWindowFlags(msg.windowFlags() |
-                               QtCore.Qt.WindowStaysOnTopHint)
-            msg.setIcon(QtGui.QMessageBox.Question)
-            msg.setText("Are you sure you want to register new account")
-            msg.setWindowTitle("Confirm registration")
-            msg.setStandardButtons(QtGui.QMessageBox.Ok |
-                                   QtGui.QMessageBox.Cancel)
-            return msg.exec_() == confirmation_ok
+        def confirm(login):
+            return message_box(
+                self.res["confirm_text"].format(login),
+                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                QtGui.QMessageBox.Question,
+                self.res["confirm_title"],
+                self.icon_wnd
+            )
 
         pattern = r"[0-9A-Za-z]+"
-        result = re.match(pattern, username)
+        result = match(pattern, username)
         if not result or len(result.group()) != len(username):
             return False
 
-        # TODO get_key move to thread future
-        if self.db.check_user(username) and confirm():
+        if self.db.check_user(username) and confirm(username):
             result = [None]
             t1 = Thread(target=self.get_keys, args=(result,))
             t1.start()
-            self.label.setText("RSA key generation...")
+            self.label.setText(self.res["msg_gen_start"])
             while t1.isAlive():
                 pass
             if result[0]:
@@ -131,16 +131,12 @@ class RegWnd(QtGui.QWidget):
         if path.exists(username):
             self.username = self.sign_in(username)
             if not self.username:
-                self.label.setText("Access denied. "
-                                   "Could not get the keys!")
+                self.label.setText(self.res["msg_wrong_key"])
             else:
                 self.close()
         else:
             if not self.sign_up(username):
-                self.label.setText("Failed to register an account. "
-                                   "Incorrect login possible "
-                                   "(only letters and numbers), "
-                                   "username is already taken")
+                self.label.setText(self.res["msg_gen_end"])
             else:
                 self.username = username
                 self.close()

@@ -1,6 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
-__version__ = "1.2.2"
+__version__ = "2.2.2"
 
 from argparse import ArgumentParser, FileType
 from key_gen import rsa_load_key, encode_md5
@@ -18,5 +18,5 @@ if __name__ == '__main__':
     if username:
         master.start(db, keys, username, __version__, style_sheet)
     else:
-        raise SystemExit("Invalid username")
+        raise SystemExit(0)
     raise SystemExit(0)

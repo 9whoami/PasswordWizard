@@ -34,11 +34,10 @@ class BoxLayout(QtGui.QWidget):
     """
 
     def __init__(self, tbl, *args):
-        super(BoxLayout, self).__init__()
+        super().__init__()
 
         self.ini = "resources.ini"
         # self.installEventFilter(self)
-
         self.flag = False
         self.tbl = tbl
         self.id = args[0][0]
@@ -51,30 +50,13 @@ class BoxLayout(QtGui.QWidget):
             self.passwd.setEchoMode(QtGui.QLineEdit.Normal)
         hbox = QtGui.QHBoxLayout()
         for widget in self.widgets:
-            if isinstance(self.id, str):
-                widget.setProperty("addNewAccount", True)
             hbox.addWidget(widget)
 
         self.setLayout(hbox)
 
-        if isinstance(self.id, str):
-            t = Thread(target=self.th)
-            t.setDaemon(True)
-            t.start()
-
-    def th(self):
-        start = clock()
-        while True:
-            end = clock() - start
-            if end > 1:
-                for widget in self.widgets:
-                    widget.setProperty("addNewAccount", False)
-                break
-        return
-
     def create_widgets(self, account, slots, icon):
         tool_tip = read_cfg(self.ini, "tool_tip")
-        test = []
+
         menu = QtGui.QMenu()
         for i, slot in enumerate(slots):
             self.actions.append(
@@ -83,8 +65,8 @@ class BoxLayout(QtGui.QWidget):
             )
             self.connect(self.actions[i], QtCore.SIGNAL('triggered()'),
                          partial(slot["method"], self))
-            self.actions[i].setWhatsThis(tool_tip["show_pwd"])
-            self.actions[i].setToolTip(tool_tip["show_pwd"])
+            # self.actions[i].setWhatsThis(tool_tip["show_pwd"])
+            # self.actions[i].setToolTip(tool_tip["show_pwd"])
             menu.addAction(self.actions[i])
 
         if len(account) > 5:
@@ -100,7 +82,7 @@ class BoxLayout(QtGui.QWidget):
         self.service = QtGui.QLineEdit(account[1])
         self.service.setPlaceholderText(holder_text["service"])
         self.service.setMaxLength(50)
-        self.service.setProperty("mandatoryField", True)
+        # self.service.setProperty("mandatoryField", True)
         self.widgets.append(self.service)
 
         self.login = QtGui.QLineEdit(account[2])

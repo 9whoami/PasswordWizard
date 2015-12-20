@@ -12,16 +12,19 @@ from config_read import read_cfg
 
 
 class RegWnd(QtGui.QWidget):
-    def __init__(self, db, parent=None):
-        super(RegWnd, self).__init__(parent)
-
+    def __init__(self, db, app, parent=None):
+        super().__init__(parent)
+        self.app = app
         self.res = read_cfg("resources.ini", "welcome")
         self.icon_wnd = QtGui.QIcon(self.res["icon"])
 
         self.setWindowTitle(self.res["title"])
         self.setWindowIcon(self.icon_wnd)
-        self.setMaximumSize(250, 200)
-        self.setMinimumSize(250, 200)
+        # self.setMaximumSize(250, 200)
+        # self.setMinimumSize(250, 200)
+        self.setFixedSize(250, 200)
+        # self.connect(self, QtCore.SIGNAL("closeEvent()"), self, QtCore.SLOT(""))
+        # self.connect(self, QtCore.SIGNAL("showEvent()"), self, QtCore.SLOT(""))
 
         self.label = QtGui.QLabel(self.res["msg_welcome"])
         self.label.setObjectName("welcome")
@@ -60,6 +63,39 @@ class RegWnd(QtGui.QWidget):
         self.username = None
 
         self.show()
+        self.set_animation()
+
+    # def close(self):
+        # self.emit(QtCore.SIGNAL("closeEvent()"))
+
+    # def show(self):
+        # self.emit(QtCore.SIGNAL("showEvent()"))
+
+    def set_animation(self):
+        self.animation = QtCore.QStateMachine()
+
+        state_start = QtCore.QState()
+        state_end = QtCore.QState()
+
+        state_start.assignProperty(self.label, "geometry",
+                                   QtCore.QRect(20, -29, 200, 200))
+        state_end.assignProperty(self.label, "geometry",
+                                 QtCore.QRect(21, -29, 200, 200))
+
+        state_start.addTransition(self.btn_ok,
+                                  QtCore.SIGNAL("clicked()"), state_end)
+        state_end.addTransition(self.btn_ok,
+                                QtCore.SIGNAL("clicked()"), state_start)
+
+        label_anim = QtCore.QPropertyAnimation(self.label, "geometry")
+        label_anim.setEasingCurve(QtCore.QEasingCurve.InOutElastic)
+        label_anim.setDuration(700)
+
+        self.animation.addState(state_start)
+        self.animation.addState(state_end)
+        self.animation.setInitialState(state_start)
+        self.animation.addDefaultAnimation(label_anim)
+        self.animation.start()
 
     def set_signals(self):
         self.btn_ok.clicked.connect(self.btn_ok_click)
@@ -88,8 +124,12 @@ class RegWnd(QtGui.QWidget):
             t1 = Thread(target=self.get_keys, args=(result,))
             t1.start()
             self.label.setText(self.res["msg_gen_start"])
+            # wait thread
+            self.setEnabled(False)
             while t1.isAlive():
-                pass
+                self.app.processEvents()
+            self.setEnabled(True)
+
             if result[0]:
                 return self.db.insert_users(
                     [self.pubkey_in_md5, username]
@@ -150,7 +190,7 @@ def register(db, style=None):
     app.setStyle("Plastique")
     app.setStyleSheet(style)
 
-    wnd = RegWnd(db)
+    wnd = RegWnd(db, app)
 
     app.exec_()
 

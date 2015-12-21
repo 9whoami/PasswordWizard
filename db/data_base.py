@@ -28,7 +28,8 @@ class DataBase(MySQLConnection):
             self.__email_login = None
             self.all = False
             self.username = None
-        except Error:
+        except Error as e:
+            print(e)
             raise RuntimeError()
 
     def sign_in(self, password):

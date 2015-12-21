@@ -1,5 +1,10 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
+__version__ = "2.6.4"
+
+"""
+Главное окно программы.
+"""
 
 from time import sleep, clock
 import threading
@@ -18,7 +23,9 @@ from config_read import read_cfg, write_cfg
 
 def thread(my_func):
     """
-    Запускает функцию в отдельном потоке
+    Декоратор для запуска функции в потоке
+    :param my_func: functions
+    :return: functions
     """
 
     def wrapper(*args, **kwargs):
@@ -30,6 +37,11 @@ def thread(my_func):
 
 @thread
 def wait(args):
+    """
+    Ожидание перерисовки главного окна приложения
+    :param args: self, self.my_signal, tbl, box_layout, accounts
+    :return:
+    """
     try:
         timer = 4
         while args[0].scroll_layout.count():
@@ -44,30 +56,50 @@ def wait(args):
 
 class QWidget(QtGui.QWidget):
     def __init__(self, wnd):
+        """
+        :arg wnd: self
+        """
         super().__init__()
         self.wnd = wnd
 
     def resizeEvent(self, QResizeEvent):
+        """
+        Ждем события изменения размера при добавлении аккаунта, чтобы
+        прокрутить скролл ареа к появившемуся виджету
+        """
         try:
-            self.wnd.scroll_area.ensureWidgetVisible(self.wnd.widgets["add"],
-                                                     0, 0)
+            self.wnd.scroll_area.ensureWidgetVisible(
+                self.wnd.widgets["add"], 0, 0)
         except KeyError:
             pass
         return super().resizeEvent(QResizeEvent)
 
 
 class MainWnd(QtGui.QMainWindow):
-    """
-    The main program window
-    db, keys, username, ver, app, parent=None
-    """
-
     def __init__(self, *args, **kwargs):
+        """
+        Инстанс именно этого класса указан как self в параметрах выше
+        :param args: db, keys, username, ver, app
+        :param kwargs:
+        :return:
+        """
         super().__init__()
+        # read settings
         self.ini = "resources.ini"
         icons_path = read_cfg(self.ini, 'image')
         self.tables_name = read_cfg(self.ini, "table_db")
         self.msg = read_cfg(self.ini, "msg")
+        # get passed parameters
+        self.db = args[0] if args else kwargs["db"]
+        self.keys = args[1] if args else kwargs["keys"]
+        self.username = args[2] if args else kwargs["username"]
+        self.ver = "v." + args[3] if args else kwargs["version"]
+        self.app = args[4] if args else kwargs["app"]
+        # setup default parameters
+        self.widgets = {}
+        self.tbl = None
+        self.last_widget = None
+        self.passwd_length = 6  # starting length for password
 
         # TODO костыль !
         buf = read_cfg(self.ini, "animation_color")
@@ -82,23 +114,9 @@ class MainWnd(QtGui.QMainWindow):
                 i[j] = int(i[j])
             self.animation_color[key] = i
 
-        
-
         self.icons = {}
         for key, value in icons_path.items():
             self.icons[key] = QtGui.QIcon(value)
-
-        self.db = args[0] if args else kwargs["db"]
-        self.keys = args[1] if args else kwargs["keys"]
-        self.username = args[2] if args else kwargs["username"]
-        self.ver = "v." + args[3] if args else kwargs["version"]
-        self.app = args[4] if args else kwargs["app"]
-
-        self.widgets = {}
-        self.tbl = None
-        self.last_widget = None
-        self.passwd_length = 6  # starting length for password
-        # set tables_name name for data base
 
         self.create_widgets()
         self.set_signals()
@@ -116,20 +134,22 @@ class MainWnd(QtGui.QMainWindow):
         super().show()
         self.show_msg(self.msg["msg_welcome"].format(self.username),
                       timeout=5000)
-        self.animation_object(self.btn_add)
-        self.animation_object(self.btn_show)
-        self.animation_object(self.btn_genpasswd)
-        self.animation_object(self.edit)
+        self.animation_object(self.btn_add, reverse=True)
+        self.animation_object(self.btn_show, reverse=True)
+        self.animation_object(self.btn_genpasswd, reverse=True)
+        self.animation_object(self.edit, reverse=True)
         self.show_accounts((self.tables_name["emails"],))
 
     def closeEvent(self, *args, **kwargs):
+        # save settings before closing
         self.store_window()
 
     def set_window(self):
         wnd_params = read_cfg(self.ini, "window")
+        size = wnd_params["size"][1:-1].split(",")
+
         self.setWindowIcon(self.icons["window"])
         self.setWindowTitle(wnd_params["name"])
-        size = wnd_params["size"][1:-1].split(",")
         self.resize(int(size[1]), int(size[0]))
         self.setWindowFlags(self.windowFlags() |
                             QtCore.Qt.WindowStaysOnTopHint)
@@ -185,9 +205,10 @@ class MainWnd(QtGui.QMainWindow):
                                           btn_caption["show"], parent=self)
         self.btn_show.setToolTip(tool_tip["show"])
         self.btn_show.setMenu(menu_btn_show)
-        values = chain(self.animation_color["hide"], self.animation_color["hide"])
-        self.setStyleSheet(self.animation_color["css"].format(
-            *values))
+        values = chain(self.animation_color["hide"],
+                       self.animation_color["hide"])
+        qss = get_style_sheet(target=(self.animation_color["css"],))
+        self.setStyleSheet(qss.format(*values))
 
     def set_layouts(self):
         self.scroll_layout = QtGui.QFormLayout()
@@ -223,7 +244,6 @@ class MainWnd(QtGui.QMainWindow):
     signal_1 = QtCore.pyqtSignal(list, name='my_signal')
 
     def set_signals(self):
-
         self.signal_1.connect(self.show_accounts, QtCore.Qt.QueuedConnection)
         self.tray_icon.activated.connect(self.on_tray_event)
         self.btn_add.clicked.connect(self.form_add)
@@ -260,87 +280,14 @@ class MainWnd(QtGui.QMainWindow):
         password = ''.join(res)
         self.edit.setText(password)
 
-    # TODO This method for learn DON`T USE THIS
-    # def animation_add(self, obj, color=None, color_end=None,
-    #                   reverse=False, font_color=None):
-    #
-    #     def to(font_hide):
-    #         for i in range(len(color_end)):
-    #             if color_end[i] - color[i] > color_increment:
-    #                 color[i] += color_increment
-    #             else:
-    #                 color[i] = color_end[i]
-    #
-    #             if font_hide:
-    #                 if font_end_color[i] - font_color[i] > color_increment:
-    #                     font_color[i] += color_increment
-    #                 else:
-    #                     font_color[i] = font_end_color[i]
-    #
-    #     def downto():
-    #         for i in range(len(color_end)):
-    #             if color[i] - color_end[i] > color_increment:
-    #                 color[i] -= color_increment
-    #             else:
-    #                 color[i] = color_end[i]
-    #
-    #             if font_color[i] - font_end_color[i] > color_increment:
-    #                 font_color[i] -= color_increment
-    #             else:
-    #                 font_color[i] = font_end_color[i]
-    #
-    #     self.setEnabled(False)
-    #     if not color:
-    #         # [253, 253, 253]
-    #         color = list(self.animation_color["hide"])
-    #     if not color_end:
-    #         # [77, 136, 192]
-    #         color_end = list(self.animation_color["light"])
-    #     if not font_color:
-    #         font_hide = False
-    #         font_color = list(color)
-    #     else:
-    #         font_hide = True
-    #
-    #     break_ = lambda l1, l2: not len(set(l1).difference(set(l2))) > 0
-    #     font_end_color = list(self.animation_color["font"])
-    #     color_increment = int(self.animation_color["increment"])
-    #     steps = color_increment
-    #     style_sheet = self.animation_color["css"]
-    #
-    #     for _ in range(steps):
-    #         insert = list(color)
-    #         to(font_hide) if reverse else downto()
-    #         try:
-    #             if break_(color, insert): break
-    #             insert = list(color)
-    #
-    #             insert = insert + font_color
-    #             obj.setStyleSheet(style_sheet.format(*insert))
-    #         except RuntimeError:
-    #             self.setEnabled(True)
-    #             self.close()
-    #             return
-    #         self.app.processEvents()
-    #         sleep(0.1)
-    #
-    #     if reverse:
-    #         obj.setStyleSheet("")
-    #         self.set_style_with_application()
-    #         self.setEnabled(True)
-    #         return
-    #     col_norm = self.animation_color["border"]
-    #     self.animation_add(obj, color=color, color_end=list(col_norm),
-    #                        reverse=True, font_color=font_color)
-
     def animation_object(self, obj, color=None, color_end=None,
                          font_color=None, font_end_color=None,
                          reverse=False):
         """
         Реализует анимацию появления и исчезновения объектов. Занимаемое время
-        0.648. Для анимации появления нужно вызывать указывая только
+        0.3-0.4 c. Для анимации появления нужно вызывать указывая только
         обязательный параметр. Все цвета в rgb. Настройка меняемых свойств
-        в resourse.ini. Меняеются только 2 свойства.
+        в resourse.ini
         :type obj: QtCore.QObject (объект анимации.
                                     должен поддерживать метод setStyleSheet)
         :type color: list (стартовое значение цвета для первого сво-ва)
@@ -354,9 +301,9 @@ class MainWnd(QtGui.QMainWindow):
         :type reverse: bool (True - появление объекта, False - исчезание)
         """
 
-        def show(color, color_end, font, font_end, increment):
+        def switch(color, color_end, increment):
             """
-            Показывает объект
+
             :type font: list
             :type font_end: list
             :type increment: int (шаг изменения цвета)
@@ -365,44 +312,20 @@ class MainWnd(QtGui.QMainWindow):
             """
             break_ = lambda l1, l2: not len(set(l1).difference(set(l2))) > 0
             while True:
+                yield color
                 if break_(color, color_end): raise StopIteration
-                yield color + font
-                for i in range(len(color)):
-                    if color[i] - color_end[i] > increment:
-                        color[i] -= increment
-                    else:
-                        color[i] = color_end[i]
-
-                    if font[i] - font_end[i] > increment:
-                        font[i] -= increment
-                    else:
-                        font[i] = font_end[i]
-
-        def hide(color, color_end, font, font_end, increment):
-            """
-            Скрывает объект
-            :param color:
-            :param color_end:
-            :param font:
-            :param font_end:
-            :param increment:
-            :return:
-            """
-            break_ = lambda l1, l2: not len(set(l1).difference(set(l2))) > 0
-            while True:
-                if break_(color, color_end) and break_(font, font_end):
-                    raise StopIteration
-                yield color + font
-                for i in range(len(color)):
-                    if color_end[i] - color[i] > increment:
-                        color[i] += increment
-                    else:
-                        color[i] = color_end[i]
-
-                    if font_end[i] - font[i] > increment:
-                        font[i] += increment
-                    else:
-                        font[i] = font_end[i]
+                for i, c in enumerate(color):
+                    if c > color_end[i]:
+                        if c - color_end[i] > increment:
+                            c -= increment
+                        else:
+                            c = color_end[i]
+                    elif c < color_end[i]:
+                        if color_end[i] - c > increment:
+                            c += increment
+                        else:
+                            c = color_end[i]
+                    color[i] = c
 
         def switch_enabled(cls, obj):
             """
@@ -418,8 +341,8 @@ class MainWnd(QtGui.QMainWindow):
                 obj.setEnabled(not obj.isEnabled())
             self.setFocus()
 
-        switch_enabled(self, obj)
-        timer_start = clock()  # measure speed animation
+        if reverse: switch_enabled(self, obj)
+
         color = color if color else list(self.animation_color["hide"])
         color_end = color_end if color_end else list(
             self.animation_color["light"])
@@ -427,13 +350,11 @@ class MainWnd(QtGui.QMainWindow):
             self.animation_color["hide"])
         font_end_color = font_end_color if font_end_color else list(
             self.animation_color["font"])
-        style_sheet = self.animation_color["css"]
+        style_sheet = get_style_sheet(target=(self.animation_color["css"],))
         increment = int(self.animation_color["increment"])
 
-        # switch the animation method and passes parameters
-        color_iter = hide(color, color_end, font_color, font_end_color,
-                          increment) if reverse \
-            else show(color, color_end, font_color, font_end_color, increment)
+        color_iter = switch(color + font_color, color_end + font_end_color,
+                            increment)
 
         # run the animation
         for value in color_iter:
@@ -442,17 +363,14 @@ class MainWnd(QtGui.QMainWindow):
             sleep(.030)
             self.app.processEvents()
 
-        # if reverse = true exit this method and set default style...
-        switch_enabled(self, obj)
-        if reverse:
-            print(clock() - timer_start)
-            # obj.setStyleSheet("")
+        # if reverse = true exit this method...
+        if not reverse:
+            switch_enabled(self, obj)
             return
         # ...else run this method once again
         self.animation_object(obj,
                               color=list(color_end),
                               color_end=list(self.animation_color["border"]),
-                              reverse=True,
                               font_color=list(font_color),
                               font_end_color=
                               list(self.animation_color["font"]))
@@ -478,8 +396,7 @@ class MainWnd(QtGui.QMainWindow):
                                                        "font"]),
                                               font_end_color=
                                               list(self.animation_color[
-                                                       "hide"]),
-                                              reverse=True)
+                                                       "hide"]))
                     except KeyError:
                         continue
                 self.widgets.clear()
@@ -514,7 +431,7 @@ class MainWnd(QtGui.QMainWindow):
                                             self.icons["down"])
             self.box_connect(self.widgets[index])
             self.scroll_layout.addRow(self.widgets[index])
-            self.animation_object(self.widgets[index])
+            self.animation_object(self.widgets[index], reverse=True)
 
     def hide_show_accounts(self, tbl, box_layout=None, accounts=None):
         if threading.active_count() > 4:
@@ -522,7 +439,6 @@ class MainWnd(QtGui.QMainWindow):
         self.widgets_clear()
         wait((self, self.my_signal, tbl, box_layout, accounts,))
 
-    # tbl, box_layout=None, accounts=None
     def show_accounts(self, args):
         """
 
@@ -572,22 +488,21 @@ class MainWnd(QtGui.QMainWindow):
         slots = create_slots(self)
         # create widgets for accounts
         try:
-            for i, account in enumerate(accounts):
+            for i, account in enumerate(accounts, 1):
                 index = account[0]
                 try:
                     print(self.widgets[index])
                 except KeyError:
-                    i += 1
                     self.show_msg("{}/{}".format(i, len(accounts)), 1000)
                     self.widgets[index] = BoxLayout(self.tbl,
                                                     account,
                                                     slots,
                                                     self.icons["down"])
                     self.scroll_layout.addRow(self.widgets[index])
-                    self.animation_object(self.widgets[index])
+                    self.animation_object(self.widgets[index], reverse=True)
         except TypeError:
             pass
-        self.set_style_with_application()
+        # self.set_style_with_application()
         self.show_msg(self.msg["msg_show_accounts"].format(self.tbl))
 
     def box_connect(self, box_layout, flag=True):
@@ -646,7 +561,7 @@ class MainWnd(QtGui.QMainWindow):
                               list(self.animation_color["font"]),
                               font_end_color=
                               list(self.animation_color["font"]),
-                              reverse=False)
+                              reverse=True)
 
         self.box_flag_change(box_layout, passwd, account[2])
 
@@ -736,7 +651,7 @@ class MainWnd(QtGui.QMainWindow):
                               list(self.animation_color["light"]),
                               font_color=
                               list(self.animation_color["font"]),
-                              reverse=False)
+                              reverse=True)
         if result:
             self.box_flag_change(box_layout, passwd)
             self.box_connect(box_layout, False)
@@ -815,9 +730,9 @@ class MainWnd(QtGui.QMainWindow):
         self.tray_icon.setContextMenu(self.main_menu)
         return True
 
-    def set_style_with_application(self):
-        self.app.setStyleSheet(get_style_sheet())
-        return
+        # def set_style_with_application(self):
+        #     self.app.setStyleSheet(get_style_sheet())
+        #     return
 
 
 def start(db, keys, login, ver, style=None):

@@ -1,5 +1,10 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
+__version__ = "2.1.0"
+
+"""
+Загружает настройки QSS для виджетов
+"""
 
 from os import listdir, sep
 from itertools import chain
@@ -19,7 +24,7 @@ def get_style_sheet(path="./gui/styles/", qss='', target=None, ignored=None):
     """
     filter_ = lambda l1, l2: set(l1).difference(set(l2))
     if path[-1] not in sep: path += sep
-    qss_main = ["QWidget.styl", "Main.styl"]
+    qss_main = ["QWidget.styl", "Main.styl", "Animation.styl"]
     if ignored:
         qss_main += ignored
 
@@ -27,11 +32,11 @@ def get_style_sheet(path="./gui/styles/", qss='', target=None, ignored=None):
         qss_files = target
     else:
         try:
-            qss_files = filter_(listdir(path), qss_main)
+            qss_files = chain([qss_main[0]], filter_(listdir(path), qss_main), [qss_main[1]])
         except FileNotFoundError:
             return None
 
-    for qss_file in chain([qss_main[0]], qss_files, [qss_main[1]]):
+    for qss_file in qss_files:
             with open(path + qss_file) as f:
                 qss += f.read()
 

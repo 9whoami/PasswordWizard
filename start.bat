@@ -1,1 +1,0 @@
-python main.py -p 3 -ok public.key -pk private.key

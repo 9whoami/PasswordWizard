@@ -5,6 +5,14 @@ from configparser import ConfigParser, Error
 
 
 def write_cfg(file, section, option, value):
+    """
+    Записывает настройки в файл
+    :param file:
+    :param section:
+    :param option:
+    :param value:
+    :return:
+    """
     parser = ConfigParser()
 
     try:
@@ -21,6 +29,12 @@ def write_cfg(file, section, option, value):
 
 
 def read_cfg(*args, **kwargs):
+    """
+    Читает настройки
+    :param args: первыйм параметром идет имя файла, затем имя секции
+    :param kwargs: file, section
+    :return: dict в случае успеха иначе None
+    """
     if args:
         file_info = dict(file=args[0],
                          section=args[1])
@@ -31,7 +45,7 @@ def read_cfg(*args, **kwargs):
     parser = ConfigParser()
     try:
         parser.read(file_info["file"])
-        result = {}
+        result = dict()
         if parser.has_section(file_info["section"]):
             items = parser.items(file_info["section"])
             for item in items:
@@ -43,5 +57,6 @@ def read_cfg(*args, **kwargs):
                 '{0} not found in the {1} file'.format(section, filename))
     except Error as e:
         print(e)
+        return None
     else:
         del parser

@@ -1,5 +1,10 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
+__version__ = "1.2.4"
+
+"""
+Окно входа или регистрации.
+"""
 
 import sys
 from re import match
@@ -13,18 +18,26 @@ from config_read import read_cfg
 
 class RegWnd(QtGui.QWidget):
     def __init__(self, db, app, parent=None):
+        """
+
+        :param db: instance db.DataBase
+        :param app: QtGui.QApplication
+        :param parent:
+        :return:
+        """
         super().__init__(parent)
+        self.db = db
+        self.pubkey = None
+        self.privkey = None
+        self.pubkey_in_md5 = None
+        self.username = None
         self.app = app
         self.res = read_cfg("resources.ini", "welcome")
         self.icon_wnd = QtGui.QIcon(self.res["icon"])
 
         self.setWindowTitle(self.res["title"])
         self.setWindowIcon(self.icon_wnd)
-        # self.setMaximumSize(250, 200)
-        # self.setMinimumSize(250, 200)
         self.setFixedSize(250, 200)
-        # self.connect(self, QtCore.SIGNAL("closeEvent()"), self, QtCore.SLOT(""))
-        # self.connect(self, QtCore.SIGNAL("showEvent()"), self, QtCore.SLOT(""))
 
         self.label = QtGui.QLabel(self.res["msg_welcome"])
         self.label.setObjectName("welcome")
@@ -32,7 +45,6 @@ class RegWnd(QtGui.QWidget):
 
         self.edit = QtGui.QLineEdit()
         self.edit.setPlaceholderText(self.res["edit_holder_text"])
-        # self.edit.setMaxLength(20)
 
         self.btn_ok = QtGui.QPushButton(self.res["btn_ok"])
 
@@ -55,21 +67,8 @@ class RegWnd(QtGui.QWidget):
 
         self.setLayout(self.vbox)
         self.set_signals()
-
-        self.db = db
-        self.pubkey = None
-        self.privkey = None
-        self.pubkey_in_md5 = None
-        self.username = None
-
-        self.show()
         self.set_animation()
-
-    # def close(self):
-        # self.emit(QtCore.SIGNAL("closeEvent()"))
-
-    # def show(self):
-        # self.emit(QtCore.SIGNAL("showEvent()"))
+        self.show()
 
     def set_animation(self):
         self.animation = QtCore.QStateMachine()
@@ -114,7 +113,7 @@ class RegWnd(QtGui.QWidget):
                 self.icon_wnd
             )
 
-        pattern = r"[0-9A-Za-z]+"
+        pattern = r"[0-9A-Za-z]{4,}"
         result = match(pattern, username)
         if not result or len(result.group()) != len(username):
             return False

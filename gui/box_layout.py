@@ -1,5 +1,11 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
+__version__ = "1.5.0"
+
+"""
+Динамически создаваемые виджеты для отображения данных о аккаунте и добавления
+аккаунтов.
+"""
 
 from time import clock
 from PyQt4 import QtGui, QtCore
@@ -34,6 +40,15 @@ class BoxLayout(QtGui.QWidget):
     """
 
     def __init__(self, tbl, *args):
+        """
+
+        :param tbl: str or int
+        :param args: account, slots, icon
+        :argument args[0] iterable obgect of string
+        :argument args[1] dict
+        :argument args[2] icon
+        :return:
+        """
         super().__init__()
 
         self.ini = "resources.ini"
@@ -55,6 +70,13 @@ class BoxLayout(QtGui.QWidget):
         self.setLayout(hbox)
 
     def create_widgets(self, account, slots, icon):
+        """
+
+        :param account: itarable object of string
+        :param slots: list of dict
+        :param icon: QtGui.QIcon
+        :return:
+        """
         tool_tip = read_cfg(self.ini, "tool_tip")
 
         menu = QtGui.QMenu()
@@ -65,8 +87,6 @@ class BoxLayout(QtGui.QWidget):
             )
             self.connect(self.actions[i], QtCore.SIGNAL('triggered()'),
                          partial(slot["method"], self))
-            # self.actions[i].setWhatsThis(tool_tip["show_pwd"])
-            # self.actions[i].setToolTip(tool_tip["show_pwd"])
             menu.addAction(self.actions[i])
 
         if len(account) > 5:

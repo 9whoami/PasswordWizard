@@ -1,0 +1,47 @@
+/*
+color: #fdfdfe // background
+color: #e4e4e4 // border
+color: #4d88c0 // border in focus
+*/
+/*
+*[addNewAccount="true"] {
+  border: 2px groove #4d88c0;
+  background-color: transparent;
+}
+*/
+
+
+QLineEdit#editPwd {
+  max-width: 200px;
+  min-width: 86px
+}
+
+
+QPushButton#btnPwd {
+  min-width: 110px;
+}
+
+
+QLineEdit#password {
+  max-width: 200px;
+}
+
+
+QLabel#welcome {
+  max-width: 200px;
+}
+
+
+QPushButton, QLineEdit, QLabel#labelEmail {
+  border: 2px groove #ededed; /* transparent  #ededed */
+}
+
+QPushButton:hover, QLineEdit:hover, QLabel#labelEmail:hover {
+  border: 2px groove #4d88c0; /* transparent  #ededed */
+}
+
+/* experimental setup */
+QLabel#labelEmail:focus {
+  border: 2px groove #4d88c0;
+  border-radius: 2px;
+}

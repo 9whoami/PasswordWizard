@@ -11,7 +11,7 @@ from random import choice
 from mysql.connector import Error
 from key_gen import rsa_decode, rsa_encode
 from .box_layout import BoxLayout
-from .style import get_style_sheet
+from .get_style import get_style_sheet
 from .message_box import message_box
 from config_read import read_cfg, write_cfg
 

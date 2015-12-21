@@ -1,4 +1,6 @@
 .idea/.name
+.idea
+.idea/codeStyleSettings.xml
 .idea/dataSources.ids
 .idea/dataSources.local.xml
 .idea/dataSources.xml

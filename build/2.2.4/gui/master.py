@@ -123,6 +123,7 @@ class MainWnd(QtGui.QMainWindow):
         self.set_layouts()
         self.set_window()
         self.tray_icon.show()
+        self.flag = True
         self.show()
 
     def __del__(self):
@@ -138,11 +139,14 @@ class MainWnd(QtGui.QMainWindow):
         self.animation_object(self.btn_show, reverse=True)
         self.animation_object(self.btn_genpasswd, reverse=True)
         self.animation_object(self.edit, reverse=True)
-        self.show_accounts((self.tables_name["emails"],))
+        if self.flag:
+            self.flag = not self.flag
+            self.show_accounts((self.tables_name["emails"],))
 
     def closeEvent(self, *args, **kwargs):
         # save settings before closing
         self.store_window()
+        return super().closeEvent(*args, **kwargs)
 
     def set_window(self):
         wnd_params = read_cfg(self.ini, "window")

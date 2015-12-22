@@ -28,7 +28,7 @@ class MainWindow(QtGui.QMainWindow):
          self.menubar.addAction(self.menuFile.menuAction())
 
          p = QtGui.QPalette()
-         brush = QtGui.QBrush(QtCore.Qt.white,QtGui.QPixmap('./img/51406(1).jpg'))
+         brush = QtGui.QBrush(QtCore.Qt.white,QtGui.QPixmap('1.jpg'))
          p.setBrush(QtGui.QPalette.Active,QtGui.QPalette.Window,brush)
          p.setBrush(QtGui.QPalette.Inactive,QtGui.QPalette.Window,brush)
          p.setBrush(QtGui.QPalette.Disabled,QtGui.QPalette.Window,brush)

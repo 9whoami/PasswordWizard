@@ -2,6 +2,7 @@
 __author__ = 'whoami'
 
 from PyQt4 import QtGui
+from .get_style import get_style_sheet
 
 
 def message_box(*args, parent=None):
@@ -60,18 +61,10 @@ def message_box(*args, parent=None):
     :return:
     """
     confirmation_ok = (1024, 16384,)
-    style_sheet_file = "./gui/styles/QMessageBox.styl"
     message_wnd = QtGui.QMessageBox(parent)
-    # message_wnd.setTextFormat()
 
     try:
-        with open(style_sheet_file) as f:
-            style_sheet = f.read()
-    except FileNotFoundError:
-        style_sheet = None
-
-    try:
-        message_wnd.setStyleSheet(style_sheet)
+        message_wnd.setStyleSheet(get_style_sheet(target=("QMessageBox.styl",)))
 
         message_wnd.setText(args[0] if len(args) >= 1 else None)
         message_wnd.setStandardButtons(

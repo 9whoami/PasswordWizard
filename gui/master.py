@@ -100,6 +100,7 @@ class MainWnd(QtGui.QMainWindow):
         self.tbl = None
         self.last_widget = None
         self.passwd_length = 6  # starting length for password
+        self.empty_label = [False, None]
 
         # TODO костыль !
         buf = read_cfg(self.ini, "animation_color")
@@ -209,6 +210,24 @@ class MainWnd(QtGui.QMainWindow):
                        self.animation_color["hide"])
         qss = get_style_sheet(target=(self.animation_color["css"],))
         self.setStyleSheet(qss.format(*values))
+
+    def show_label_empty(self, showing=False):
+        if showing and not self.empty_label[0]:
+            label = QtGui.QLabel("Empty", self)
+            label.setStyleSheet("font: 22px")
+
+            self.empty_label[1] = label
+            self.empty_label[0] = not self.empty_label[0]
+
+            self.scroll_layout.setFormAlignment(QtCore.Qt.AlignHCenter)
+            self.scroll_layout.addRow(self.empty_label[1])
+
+        elif self.empty_label[0]:
+            self.empty_label[0] = not self.empty_label[0]
+            self.empty_label[1].setStyleSheet("color: rgb(253, 253, 253)")
+            self.empty_label[1].deleteLater()
+
+            self.scroll_layout.takeAt(0)
 
     def set_layouts(self):
         self.scroll_layout = QtGui.QFormLayout()
@@ -341,7 +360,7 @@ class MainWnd(QtGui.QMainWindow):
                 obj.setEnabled(not obj.isEnabled())
             self.setFocus()
 
-        if reverse: switch_enabled(self, obj)
+        switch_enabled(self, obj)
 
         color = color if color else list(self.animation_color["hide"])
         color_end = color_end if color_end else list(
@@ -360,13 +379,13 @@ class MainWnd(QtGui.QMainWindow):
         for value in color_iter:
             v = style_sheet.format(*value)
             obj.setStyleSheet(v)
-            sleep(.030)
+            sleep(.010)
             self.app.processEvents()
 
         # if reverse = true exit this method...
-        if not reverse:
-            switch_enabled(self, obj)
-            return
+        switch_enabled(self, obj)
+
+        if not reverse: return
         # ...else run this method once again
         self.animation_object(obj,
                               color=list(color_end),
@@ -382,6 +401,9 @@ class MainWnd(QtGui.QMainWindow):
             if self.widgets:
                 for value in self.widgets.values():
                     try:
+                        if isinstance(value, QtGui.QLabel):
+                            value.deleteLater()
+                            continue
                         self.box_connect(value, False)
                         value.deleteLater()
                         self.animation_object(value,
@@ -407,11 +429,12 @@ class MainWnd(QtGui.QMainWindow):
         # show form for add account
         if threading.active_count() > 4:
             return
+        self.show_label_empty(False)
         btn_caption = read_cfg(self.ini, "btn_name")
 
         if self.tbl in self.tables_name["accounts"] and \
                 not self.db.get_email_id():
-            self.show_msg("First you need to choose email")
+            self.show_msg(self.msg["msg_form_add_error_1"])
             return
         account = ("add", None, None, None, None,)
         slots = (
@@ -423,7 +446,7 @@ class MainWnd(QtGui.QMainWindow):
         index = "add"
         try:
             print(self.widgets[index])
-            self.show_msg("The form of addition is already displayed")
+            self.show_msg(self.msg["msg_form_add_error_2"])
         except KeyError:
             self.widgets[index] = BoxLayout(self.tbl,
                                             account,
@@ -473,6 +496,7 @@ class MainWnd(QtGui.QMainWindow):
         if threading.active_count() > 4:
             return
 
+        self.show_label_empty(False)
         self.tbl = args[0]
         box_layout = args[1] if len(args) > 2 else None
         # setup result for database
@@ -500,9 +524,10 @@ class MainWnd(QtGui.QMainWindow):
                                                     self.icons["down"])
                     self.scroll_layout.addRow(self.widgets[index])
                     self.animation_object(self.widgets[index], reverse=True)
+            if not len(accounts):
+                self.show_label_empty(True)
         except TypeError:
             pass
-        # self.set_style_with_application()
         self.show_msg(self.msg["msg_show_accounts"].format(self.tbl))
 
     def box_connect(self, box_layout, flag=True):
@@ -580,6 +605,7 @@ class MainWnd(QtGui.QMainWindow):
                 parent=self)
 
         def del_(cls, box_layuot):
+            box_layuot.deleteLater()
             cls.animation_object(box_layout,
                                  # [77, 136, 192]
                                  color=list(cls.animation_color["border"]),
@@ -589,14 +615,15 @@ class MainWnd(QtGui.QMainWindow):
                                  font_color=list(cls.animation_color["font"]),
                                  font_end_color=list(
                                      cls.animation_color["hide"]),
-                                 reverse=True)
-            box_layuot.deleteLater()
+                                 reverse=False)
             try:
                 del (self.widgets[box_layout.id])
                 if box_layout.flag:
                     self.box_connect(box_layout, False)
             except KeyError:
                 pass
+            if cls.scroll_layout.count() == 1:
+                cls.show_label_empty(True)
 
         if isinstance(box_layout.id, int) and del_confirm(self, box_layout):
             self.db.del_account(box_layout.tbl, box_layout.id)

@@ -10,7 +10,7 @@ from os import listdir, sep
 from itertools import chain
 
 
-def get_style_sheet(path="./gui/styles/", qss='', target=None, ignored=None):
+def get_style_sheet(path="./styles/", qss='', target=None, ignored=None):
     """
     Если указан параметр target то параметр ignored будет проигнорирован (
     забавная ирония :) ) Название файлов для target и ignored указывать с

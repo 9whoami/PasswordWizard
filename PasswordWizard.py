@@ -1,6 +1,6 @@
 # -*- coding: cp1251 -*-
 __author__ = 'whoami'
-__version__ = "2.2.5"
+__version__ = "2.2.6"
 
 from PyQt4.QtGui import *
 from functools import partial

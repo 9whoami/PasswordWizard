@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 __version__ = "2.2.6"
 

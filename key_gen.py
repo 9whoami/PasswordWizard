@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 
 from rsa import newkeys, PublicKey, PrivateKey, encrypt, decrypt
@@ -11,9 +11,9 @@ from os.path import exists
 
 def encode_md5(data):
     """
-    Кодирует переданную строку в md5
-    :param data: str строку для кодирования
-    :return: str md5-хэш
+    РљРѕРґРёСЂСѓРµС‚ РїРµСЂРµРґР°РЅРЅСѓСЋ СЃС‚СЂРѕРєСѓ РІ md5
+    :param data: str СЃС‚СЂРѕРєСѓ РґР»СЏ РєРѕРґРёСЂРѕРІР°РЅРёСЏ
+    :return: str md5-С…СЌС€
     """
     md5 = new("md5")
     md5.update(data)
@@ -22,10 +22,10 @@ def encode_md5(data):
 
 def rsa_gen_key(publicfile='public.key', privatefile='private.key'):
     """
-    генерируем ключи доступа
-    :param publicfile: имя будущего файла
-    :param privatefile: имя будущего файла
-    :return: в случае успеха возвращаем публичный и приватный ключи
+    РіРµРЅРµСЂРёСЂСѓРµРј РєР»СЋС‡Рё РґРѕСЃС‚СѓРїР°
+    :param publicfile: РёРјСЏ Р±СѓРґСѓС‰РµРіРѕ С„Р°Р№Р»Р°
+    :param privatefile: РёРјСЏ Р±СѓРґСѓС‰РµРіРѕ С„Р°Р№Р»Р°
+    :return: РІ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС…Р° РІРѕР·РІСЂР°С‰Р°РµРј РїСѓР±Р»РёС‡РЅС‹Р№ Рё РїСЂРёРІР°С‚РЅС‹Р№ РєР»СЋС‡Рё
     """
     (pubkey, privkey) = newkeys(2048)
     pckey = pubkey.save_pkcs1()
@@ -45,11 +45,11 @@ def rsa_gen_key(publicfile='public.key', privatefile='private.key'):
 
 def rsa_load_key(public_file=None, private_file=None, dir=None):
     """
-    Загружаем ключи из файлов
-    :param public_file: файл публичного ключа
-    :param private_file: файл приватного ключа
-    :param dir: папка с ключами
-    :return: возвращаем публичный и приватный ключи
+    Р—Р°РіСЂСѓР¶Р°РµРј РєР»СЋС‡Рё РёР· С„Р°Р№Р»РѕРІ
+    :param public_file: С„Р°Р№Р» РїСѓР±Р»РёС‡РЅРѕРіРѕ РєР»СЋС‡Р°
+    :param private_file: С„Р°Р№Р» РїСЂРёРІР°С‚РЅРѕРіРѕ РєР»СЋС‡Р°
+    :param dir: РїР°РїРєР° СЃ РєР»СЋС‡Р°РјРё
+    :return: РІРѕР·РІСЂР°С‰Р°РµРј РїСѓР±Р»РёС‡РЅС‹Р№ Рё РїСЂРёРІР°С‚РЅС‹Р№ РєР»СЋС‡Рё
     """
     try:
         if dir:
@@ -75,10 +75,10 @@ def rsa_load_key(public_file=None, private_file=None, dir=None):
 
 def rsa_encode(data, key):
     """
-    кодируем строку
-    :param data: строка для кодирования
-    :param key: публичный ключ
-    :return: результат кодирования
+    РєРѕРґРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ
+    :param data: СЃС‚СЂРѕРєР° РґР»СЏ РєРѕРґРёСЂРѕРІР°РЅРёСЏ
+    :param key: РїСѓР±Р»РёС‡РЅС‹Р№ РєР»СЋС‡
+    :return: СЂРµР·СѓР»СЊС‚Р°С‚ РєРѕРґРёСЂРѕРІР°РЅРёСЏ
     """
     try:
         data = data.encode("utf8")
@@ -94,10 +94,10 @@ def rsa_encode(data, key):
 
 def rsa_decode(data, key):
     """
-    декодируем строку
-    :param data: строка
-    :param key: приватный ключ
-    :return: результат
+    РґРµРєРѕРґРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ
+    :param data: СЃС‚СЂРѕРєР°
+    :param key: РїСЂРёРІР°С‚РЅС‹Р№ РєР»СЋС‡
+    :return: СЂРµР·СѓР»СЊС‚Р°С‚
     """
     try:
         data = data.encode("ascii")
@@ -149,7 +149,7 @@ def rsa_decode(data, key):
 #     encrypted = rsa_key.encrypt(message)
 #     return b64encode(encrypted)
 #
-# encrypted_text = encrypt(public_key, 'привет мир')
+# encrypted_text = encrypt(public_key, 'РїСЂРёРІРµС‚ РјРёСЂ')
 # print(encrypted_text)
 # decrypted_text = decrypt(private_key, encrypted_text)
 # print(decrypted_text)

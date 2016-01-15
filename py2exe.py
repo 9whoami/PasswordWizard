@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 
 from cx_Freeze import setup, Executable

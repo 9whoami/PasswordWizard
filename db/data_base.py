@@ -1,9 +1,9 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = "whoami"
 __version__ = "1.1.2"
 
 """
-Реазилует интерфейс работы с базой данных.
+Р РµР°Р·РёР»СѓРµС‚ РёРЅС‚РµСЂС„РµР№СЃ СЂР°Р±РѕС‚С‹ СЃ Р±Р°Р·РѕР№ РґР°РЅРЅС‹С….
 """
 
 from mysql.connector import MySQLConnection, Error
@@ -14,7 +14,7 @@ from datetime import datetime
 class DataBase(MySQLConnection):
     def __init__(self):
         """
-        Подключаемся к БД. Создаем курсор.
+        РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє Р‘Р”. РЎРѕР·РґР°РµРј РєСѓСЂСЃРѕСЂ.
         :return:
         """
         db_config = read_cfg(file="config.ini",
@@ -34,9 +34,9 @@ class DataBase(MySQLConnection):
 
     def sign_in(self, password):
         """
-        Пытаемся войти в аккаунт.
+        РџС‹С‚Р°РµРјСЃСЏ РІРѕР№С‚Рё РІ Р°РєРєР°СѓРЅС‚.
         :param password: str
-        :return: str в случае успеха иначе False
+        :return: str РІ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС…Р° РёРЅР°С‡Рµ False
         """
         rows = self.query_fetch("select * from {} where passwd = {!r}".format(
             self.tables["users"], password))
@@ -66,9 +66,9 @@ class DataBase(MySQLConnection):
 
     def set_email_id(self, id):
         """
-        Устанавливает email id. Это важно для отображения списка аккаунтов.
-        Если all = True то при запросе списка аккаунтов отобразятся все
-         аккаунты пользователя иначе только для текущего email id
+        РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ email id. Р­С‚Рѕ РІР°Р¶РЅРѕ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЃРїРёСЃРєР° Р°РєРєР°СѓРЅС‚РѕРІ.
+        Р•СЃР»Рё all = True С‚Рѕ РїСЂРё Р·Р°РїСЂРѕСЃРµ СЃРїРёСЃРєР° Р°РєРєР°СѓРЅС‚РѕРІ РѕС‚РѕР±СЂР°Р·СЏС‚СЃСЏ РІСЃРµ
+         Р°РєРєР°СѓРЅС‚С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёРЅР°С‡Рµ С‚РѕР»СЊРєРѕ РґР»СЏ С‚РµРєСѓС‰РµРіРѕ email id
         :param id: int
         :return:
         """
@@ -87,7 +87,7 @@ class DataBase(MySQLConnection):
 
     def check_user(self, login):
         """
-        Доступность имя пользователя
+        Р”РѕСЃС‚СѓРїРЅРѕСЃС‚СЊ РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
         :param login: str
         :return: bool
         """
@@ -104,7 +104,7 @@ class DataBase(MySQLConnection):
 
     def get_accounts(self, table_name):
         """
-        получение списка аккаунтов
+        РїРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° Р°РєРєР°СѓРЅС‚РѕРІ
         :param table_name:
         :return: tuple in tuple
         """
@@ -130,7 +130,7 @@ class DataBase(MySQLConnection):
 
     def get_account(self, table_name, id):
         """
-        получение одного аккаунта из таблице по его id
+        РїРѕР»СѓС‡РµРЅРёРµ РѕРґРЅРѕРіРѕ Р°РєРєР°СѓРЅС‚Р° РёР· С‚Р°Р±Р»РёС†Рµ РїРѕ РµРіРѕ id
         :param table_name: str
         :param id: int
         :return: tuple
@@ -142,7 +142,7 @@ class DataBase(MySQLConnection):
 
     def insert_users(self, data):
         """
-        добавление пользователя в бд
+        РґРѕР±Р°РІР»РµРЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ Р±Рґ
         :param data: list
         :return: bool
         """
@@ -156,7 +156,7 @@ class DataBase(MySQLConnection):
 
     def insert_email(self, data):
         """
-        добавление email в bd
+        РґРѕР±Р°РІР»РµРЅРёРµ email РІ bd
         :param data: list
         :return: bool
         """
@@ -190,7 +190,7 @@ class DataBase(MySQLConnection):
 
     def update_account(self, *args):
         """
-        Обновление данных об аккаунте
+        РћР±РЅРѕРІР»РµРЅРёРµ РґР°РЅРЅС‹С… РѕР± Р°РєРєР°СѓРЅС‚Рµ
         :param args: tabel name, service, login, passwd, forgot, field id
         :return: bool
         """

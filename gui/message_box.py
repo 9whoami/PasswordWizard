@@ -1,4 +1,4 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 
 from PyQt4 import QtGui

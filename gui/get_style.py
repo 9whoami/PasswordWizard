@@ -1,9 +1,9 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 __version__ = "2.1.0"
 
 """
-Загружает настройки QSS для виджетов
+Р—Р°РіСЂСѓР¶Р°РµС‚ РЅР°СЃС‚СЂРѕР№РєРё QSS РґР»СЏ РІРёРґР¶РµС‚РѕРІ
 """
 
 from os import listdir, sep
@@ -12,14 +12,14 @@ from itertools import chain
 
 def get_style_sheet(path="./styles/", qss='', target=None, ignored=None):
     """
-    Если указан параметр target то параметр ignored будет проигнорирован (
-    забавная ирония :) ) Название файлов для target и ignored указывать с
-    расширением
-    :param path: str (путь к стилям)
-    :param qss: str (содержимое фалов стилей)
-    :param target: итерируемый обхект (если нужно загрузить определенные файлы)
-    :param ignored: итерируемый объект (если нужно какие то файлы
-                                                            проигнорировать)
+    Р•СЃР»Рё СѓРєР°Р·Р°РЅ РїР°СЂР°РјРµС‚СЂ target С‚Рѕ РїР°СЂР°РјРµС‚СЂ ignored Р±СѓРґРµС‚ РїСЂРѕРёРіРЅРѕСЂРёСЂРѕРІР°РЅ (
+    Р·Р°Р±Р°РІРЅР°СЏ РёСЂРѕРЅРёСЏ :) ) РќР°Р·РІР°РЅРёРµ С„Р°Р№Р»РѕРІ РґР»СЏ target Рё ignored СѓРєР°Р·С‹РІР°С‚СЊ СЃ
+    СЂР°СЃС€РёСЂРµРЅРёРµРј
+    :param path: str (РїСѓС‚СЊ Рє СЃС‚РёР»СЏРј)
+    :param qss: str (СЃРѕРґРµСЂР¶РёРјРѕРµ С„Р°Р»РѕРІ СЃС‚РёР»РµР№)
+    :param target: РёС‚РµСЂРёСЂСѓРµРјС‹Р№ РѕР±С…РµРєС‚ (РµСЃР»Рё РЅСѓР¶РЅРѕ Р·Р°РіСЂСѓР·РёС‚СЊ РѕРїСЂРµРґРµР»РµРЅРЅС‹Рµ С„Р°Р№Р»С‹)
+    :param ignored: РёС‚РµСЂРёСЂСѓРµРјС‹Р№ РѕР±СЉРµРєС‚ (РµСЃР»Рё РЅСѓР¶РЅРѕ РєР°РєРёРµ С‚Рѕ С„Р°Р№Р»С‹
+                                                            РїСЂРѕРёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ)
     :return: str
     """
     filter_ = lambda l1, l2: set(l1).difference(set(l2))
@@ -37,7 +37,8 @@ def get_style_sheet(path="./styles/", qss='', target=None, ignored=None):
             return None
 
     for qss_file in qss_files:
-            with open(path + qss_file) as f:
-                qss += f.read()
+        print(qss_file)
+        with open(path + qss_file) as f:
+            qss += f.read()
 
     return qss

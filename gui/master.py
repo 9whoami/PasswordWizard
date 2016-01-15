@@ -1,13 +1,13 @@
-# -*- coding: cp1251 -*-
+# -*- coding: utf-8 -*-
 __author__ = 'whoami'
 __version__ = "2.6.4"
 
 """
-Главное окно программы.
+Р“Р»Р°РІРЅРѕРµ РѕРєРЅРѕ РїСЂРѕРіСЂР°РјРјС‹.
 """
 
-from time import sleep, clock
 import threading
+from time import sleep, clock
 from itertools import chain
 from PyQt4 import QtGui, QtCore
 from functools import partial
@@ -23,7 +23,7 @@ from config_read import read_cfg, write_cfg
 
 def thread(my_func):
     """
-    Декоратор для запуска функции в потоке
+    Р”РµРєРѕСЂР°С‚РѕСЂ РґР»СЏ Р·Р°РїСѓСЃРєР° С„СѓРЅРєС†РёРё РІ РїРѕС‚РѕРєРµ
     :param my_func: functions
     :return: functions
     """
@@ -38,7 +38,7 @@ def thread(my_func):
 @thread
 def wait(args):
     """
-    Ожидание перерисовки главного окна приложения
+    РћР¶РёРґР°РЅРёРµ РїРµСЂРµСЂРёСЃРѕРІРєРё РіР»Р°РІРЅРѕРіРѕ РѕРєРЅР° РїСЂРёР»РѕР¶РµРЅРёСЏ
     :param args: self, self.my_signal, tbl, box_layout, accounts
     :return:
     """
@@ -64,8 +64,8 @@ class QWidget(QtGui.QWidget):
 
     def resizeEvent(self, QResizeEvent):
         """
-        Ждем события изменения размера при добавлении аккаунта, чтобы
-        прокрутить скролл ареа к появившемуся виджету
+        Р–РґРµРј СЃРѕР±С‹С‚РёСЏ РёР·РјРµРЅРµРЅРёСЏ СЂР°Р·РјРµСЂР° РїСЂРё РґРѕР±Р°РІР»РµРЅРёРё Р°РєРєР°СѓРЅС‚Р°, С‡С‚РѕР±С‹
+        РїСЂРѕРєСЂСѓС‚РёС‚СЊ СЃРєСЂРѕР»Р» Р°СЂРµР° Рє РїРѕСЏРІРёРІС€РµРјСѓСЃСЏ РІРёРґР¶РµС‚Сѓ
         """
         try:
             self.wnd.scroll_area.ensureWidgetVisible(
@@ -78,7 +78,7 @@ class QWidget(QtGui.QWidget):
 class MainWnd(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         """
-        Инстанс именно этого класса указан как self в параметрах выше
+        РРЅСЃС‚Р°РЅСЃ РёРјРµРЅРЅРѕ СЌС‚РѕРіРѕ РєР»Р°СЃСЃР° СѓРєР°Р·Р°РЅ РєР°Рє self РІ РїР°СЂР°РјРµС‚СЂР°С… РІС‹С€Рµ
         :param args: db, keys, username, ver, app
         :param kwargs:
         :return:
@@ -102,7 +102,7 @@ class MainWnd(QtGui.QMainWindow):
         self.passwd_length = 6  # starting length for password
         self.empty_label = [False, None]
 
-        # TODO костыль !
+        # TODO РєРѕСЃС‚С‹Р»СЊ !
         buf = read_cfg(self.ini, "animation_color")
         keys = buf.keys()
         self.animation_color = {}
@@ -139,7 +139,7 @@ class MainWnd(QtGui.QMainWindow):
         self.animation_object(self.btn_show, reverse=True)
         self.animation_object(self.btn_genpasswd, reverse=True)
         self.animation_object(self.edit, reverse=True)
-        self.show_accounts((self.tables_name["emails"],))
+        # self.show_accounts((self.tables_name["emails"],))
 
     def closeEvent(self, *args, **kwargs):
         # save settings before closing
@@ -303,21 +303,21 @@ class MainWnd(QtGui.QMainWindow):
                          font_color=None, font_end_color=None,
                          reverse=False):
         """
-        Реализует анимацию появления и исчезновения объектов. Занимаемое время
-        0.3-0.4 c. Для анимации появления нужно вызывать указывая только
-        обязательный параметр. Все цвета в rgb. Настройка меняемых свойств
-        в resourse.ini
-        :type obj: QtCore.QObject (объект анимации.
-                                    должен поддерживать метод setStyleSheet)
-        :type color: list (стартовое значение цвета для первого сво-ва)
+        Р РµР°Р»РёР·СѓРµС‚ Р°РЅРёРјР°С†РёСЋ РїРѕСЏРІР»РµРЅРёСЏ Рё РёСЃС‡РµР·РЅРѕРІРµРЅРёСЏ РѕР±СЉРµРєС‚РѕРІ. Р—Р°РЅРёРјР°РµРјРѕРµ РІСЂРµРјСЏ
+        0.3-0.4 c. Р”Р»СЏ Р°РЅРёРјР°С†РёРё РїРѕСЏРІР»РµРЅРёСЏ РЅСѓР¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ СѓРєР°Р·С‹РІР°СЏ С‚РѕР»СЊРєРѕ
+        РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ. Р’СЃРµ С†РІРµС‚Р° РІ rgb. РќР°СЃС‚СЂРѕР№РєР° РјРµРЅСЏРµРјС‹С… СЃРІРѕР№СЃС‚РІ
+        РІ resourse.ini
+        :type obj: QtCore.QObject (РѕР±СЉРµРєС‚ Р°РЅРёРјР°С†РёРё.
+                                    РґРѕР»Р¶РµРЅ РїРѕРґРґРµСЂР¶РёРІР°С‚СЊ РјРµС‚РѕРґ setStyleSheet)
+        :type color: list (СЃС‚Р°СЂС‚РѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ С†РІРµС‚Р° РґР»СЏ РїРµСЂРІРѕРіРѕ СЃРІРѕ-РІР°)
         :default: hide
-        :type color_end: list (конечное значение цвета)
+        :type color_end: list (РєРѕРЅРµС‡РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ С†РІРµС‚Р°)
         :default: light
-        :type font_color: list (стартовое значение для второго свойства)
+        :type font_color: list (СЃС‚Р°СЂС‚РѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ РґР»СЏ РІС‚РѕСЂРѕРіРѕ СЃРІРѕР№СЃС‚РІР°)
         :default: hide
-        :type font_end_color: list (конечное значение)
+        :type font_end_color: list (РєРѕРЅРµС‡РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ)
         :default: font
-        :type reverse: bool (True - появление объекта, False - исчезание)
+        :type reverse: bool (True - РїРѕСЏРІР»РµРЅРёРµ РѕР±СЉРµРєС‚Р°, False - РёСЃС‡РµР·Р°РЅРёРµ)
         """
 
         def switch(color, color_end, increment):
@@ -325,7 +325,7 @@ class MainWnd(QtGui.QMainWindow):
 
             :type font: list
             :type font_end: list
-            :type increment: int (шаг изменения цвета)
+            :type increment: int (С€Р°Рі РёР·РјРµРЅРµРЅРёСЏ С†РІРµС‚Р°)
             :type color_end: list
             :type color: list
             """
@@ -348,10 +348,10 @@ class MainWnd(QtGui.QMainWindow):
 
         def switch_enabled(cls, obj):
             """
-            Блокирует виджеты которые могут прервать анимацию на время
-            анимации
-            :param cls: QtCore.QObject (экземпляр класса 'self')
-            :param obj: QtCore.QObject (объект анимации)
+            Р‘Р»РѕРєРёСЂСѓРµС‚ РІРёРґР¶РµС‚С‹ РєРѕС‚РѕСЂС‹Рµ РјРѕРіСѓС‚ РїСЂРµСЂРІР°С‚СЊ Р°РЅРёРјР°С†РёСЋ РЅР° РІСЂРµРјСЏ
+            Р°РЅРёРјР°С†РёРё
+            :param cls: QtCore.QObject (СЌРєР·РµРјРїР»СЏСЂ РєР»Р°СЃСЃР° 'self')
+            :param obj: QtCore.QObject (РѕР±СЉРµРєС‚ Р°РЅРёРјР°С†РёРё)
             :return:
             """
             cls.btn_show.setEnabled(not cls.btn_show.isEnabled())
@@ -744,7 +744,7 @@ class MainWnd(QtGui.QMainWindow):
         self.status_bar.showMessage(str(msg), timeout)
 
     def create_menu_actions(self, menu=None):
-        """Устанавливает пункты меню по клику на иконку в трее"""
+        """РЈСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РїСѓРЅРєС‚С‹ РјРµРЅСЋ РїРѕ РєР»РёРєСѓ РЅР° РёРєРѕРЅРєСѓ РІ С‚СЂРµРµ"""
         if menu:
             for key in menu.keys():
                 function = menu[key]
@@ -756,10 +756,6 @@ class MainWnd(QtGui.QMainWindow):
         quit_action.triggered.connect(QtGui.QApplication.quit)
         self.tray_icon.setContextMenu(self.main_menu)
         return True
-
-        # def set_style_with_application(self):
-        #     self.app.setStyleSheet(get_style_sheet())
-        #     return
 
 
 def start(db, keys, login, ver, style=None):
